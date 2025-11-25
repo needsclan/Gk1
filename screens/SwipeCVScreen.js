@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, ImageBackground, useWindowDimensions, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  ImageBackground,
+  useWindowDimensions,
+  Pressable,
+} from "react-native";
 import GlobalStyles from "../style/GlobalStyle";
 import { ref, get, child } from "firebase/database";
 import { rtdb, auth } from "../database/database";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 
-// helper der laver værdi om til læsbar label
+// helper: lav værdi om til label
 const toLabel = (v) => {
   if (v == null) return "";
   if (Array.isArray(v)) return v.join(", ");
@@ -14,51 +21,43 @@ const toLabel = (v) => {
   return String(v);
 };
 
-// helper der formaterer tal som danske tusindtals
+// helper: tusindtalsformat (dk)
 const formatDKK = (n) =>
   typeof n === "number"
     ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
     : String(n);
 
 export default function SwipeCVScreen() {
-  // liste over andres cv er
   const [cvs, setCvs] = useState([]);
-
-  // højde på tabbar til placering af infoblok
   const tabBarHeight = useBottomTabBarHeight();
-
-  // skærmstørrelse til pager layout
   const { width, height } = useWindowDimensions();
-
-  // navigation til detaljeskærm
   const navigation = useNavigation();
 
-  // henter cv er en gang ved mount
+  // hent cvs
   useEffect(() => {
     const loadCVs = async () => {
       try {
         const snapshot = await get(child(ref(rtdb), "cvs"));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const me = auth.currentUser?.uid;
+        if (!snapshot.exists()) return setCvs([]);
 
-          // filtrerer eget cv væk og laver array til flatlist
-          const others = Object.entries(data)
-            .filter(([uid]) => uid !== me)
-            .map(([uid, val]) => ({ uid, ...val }));
+        const data = snapshot.val();
+        const me = auth.currentUser?.uid;
 
-          setCvs(others);
-        } else {
-          setCvs([]);
-        }
+        // lav array af andre end mig
+        const others = Object.entries(data)
+          .filter(([uid]) => uid !== me)
+          .map(([uid, val]) => ({ uid, ...val }));
+
+        setCvs(others);
       } catch (error) {
         console.error("Fejl:", error.message);
       }
     };
+
     loadCVs();
   }, []);
 
-  // tomtilstand hvis der ikke er data
+  // ingen data
   if (cvs.length === 0) {
     return (
       <View style={[GlobalStyles.container, { backgroundColor: "black" }]}>
@@ -67,7 +66,7 @@ export default function SwipeCVScreen() {
     );
   }
 
-  // infoblok som ligger ovenpå billedet nederst
+  // infoblok
   const InfoBlock = ({ item }) => (
     <View
       style={{
@@ -95,7 +94,9 @@ export default function SwipeCVScreen() {
       ) : null}
 
       {item.educationLevel ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>🎓 {item.educationLevel}</Text>
+        <Text style={{ fontSize: 16, color: "#fff" }}>
+          🎓 {item.educationLevel}
+        </Text>
       ) : null}
 
       {item.age ? (
@@ -103,24 +104,32 @@ export default function SwipeCVScreen() {
       ) : null}
 
       {item.yearsExp ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>💼 {item.yearsExp} års erfaring</Text>
+        <Text style={{ fontSize: 16, color: "#fff" }}>
+          💼 {item.yearsExp} års erfaring
+        </Text>
       ) : null}
 
       {item.availability ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>🕓 {item.availability}</Text>
+        <Text style={{ fontSize: 16, color: "#fff" }}>
+          🕓 {item.availability}
+        </Text>
       ) : null}
 
       {item.skills ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>🧠 {toLabel(item.skills)}</Text>
+        <Text style={{ fontSize: 16, color: "#fff" }}>
+          🧠 {toLabel(item.skills)}
+        </Text>
       ) : null}
 
       {item.languages ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>🌍 {toLabel(item.languages)}</Text>
+        <Text style={{ fontSize: 16, color: "#fff" }}>
+          🌍 {toLabel(item.languages)}
+        </Text>
       ) : null}
     </View>
   );
 
-  // hovedlayout med vandret pager af cv kort
+  // render af cv-kort
   return (
     <View style={{ flex: 1, backgroundColor: "black" }}>
       <FlatList
@@ -129,33 +138,46 @@ export default function SwipeCVScreen() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        renderItem={({ item }) => (
-          // hele kortet er klikbart og åbner detalje
-          <Pressable
-            style={{ width, height }}
-            onPress={() => navigation.navigate("CVDetail", { cv: item })}
-          >
-            {item.photoUrl ? (
-              <ImageBackground source={{ uri: item.photoUrl }} style={{ width, height }} resizeMode="cover">
-                <InfoBlock item={item} />
-              </ImageBackground>
-            ) : (
-              <View
-                style={{
-                  width,
-                  height,
-                  backgroundColor: "#111",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 20,
-                }}
-              >
-                <Text style={{ color: "#aaa", marginBottom: 12 }}>Ingen billede</Text>
-                <InfoBlock item={item} />
-              </View>
-            )}
-          </Pressable>
-        )}
+        renderItem={({ item }) => {
+          // sikre at photoUrl er en rigtig URL
+          const hasValidPhoto =
+            item.photoUrl &&
+            typeof item.photoUrl === "string" &&
+            item.photoUrl.startsWith("http");
+
+          return (
+            <Pressable
+              style={{ width, height }}
+              onPress={() => navigation.navigate("CVDetail", { cv: item })}
+            >
+              {hasValidPhoto ? (
+                <ImageBackground
+                  source={{ uri: item.photoUrl }}
+                  style={{ width, height }}
+                  resizeMode="cover"
+                >
+                  <InfoBlock item={item} />
+                </ImageBackground>
+              ) : (
+                <View
+                  style={{
+                    width,
+                    height,
+                    backgroundColor: "#111",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 20,
+                  }}
+                >
+                  <Text style={{ color: "#aaa", marginBottom: 12 }}>
+                    Intet billede
+                  </Text>
+                  <InfoBlock item={item} />
+                </View>
+              )}
+            </Pressable>
+          );
+        }}
       />
     </View>
   );
