@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,10 +13,12 @@ import {
   Platform,
   Switch,
   ActivityIndicator,
+  PanResponder,
+  Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import GlobalStyles from "../style/GlobalStyle";
-import { ref, get, child } from "firebase/database";
+import { ref, get, child, set } from "firebase/database";
 import { rtdb, auth } from "../database/database";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -45,6 +47,10 @@ export default function SwipeCVScreen() {
   const [geocodeCache, setGeocodeCache] = useState({});
   const [geoLoading, setGeoLoading] = useState(false);
   const [filterTarget, setFilterTarget] = useState(null);
+  const [currentCv, setCurrentCv] = useState(null);
+  const [contactSaved, setContactSaved] = useState(false);
+  const currentItemRef = useRef(null);
+  const translateY = useRef(new Animated.Value(0)).current;
 
   const tabBarHeight = useBottomTabBarHeight();
   const { width, height } = useWindowDimensions();
@@ -208,6 +214,82 @@ export default function SwipeCVScreen() {
     apply();
   }, [cvs, criteria, userLocation, geocodeCache]);
 
+  // gem kontakt (opretter chat meta uden besked)
+  const saveContact = useCallback(
+    async (cv) => {
+      const me = auth.currentUser?.uid;
+      if (!me || !cv) return;
+      const otherUid = cv.uid || cv.ownerUid;
+      if (!otherUid || otherUid === me) return;
+
+      const chatId = [me, otherUid].sort().join("_");
+      const username = cv.headline || cv.username || otherUid;
+      const metaMe = {
+        otherUid,
+        otherUsername: username,
+        lastMessage: "",
+        updatedAt: Date.now(),
+      };
+      const metaOther = {
+        otherUid: me,
+        otherUsername: auth.currentUser?.email || me,
+        lastMessage: "",
+        updatedAt: Date.now(),
+      };
+
+      try {
+        await Promise.all([
+          set(ref(rtdb, `userChats/${me}/${chatId}`), metaMe),
+          set(ref(rtdb, `userChats/${otherUid}/${chatId}`), metaOther),
+        ]);
+        setContactSaved(true);
+        setTimeout(() => setContactSaved(false), 2000);
+      } catch (err) {
+        console.warn("Kontakt gem fejlede", err?.message || err);
+      }
+    },
+    []
+  );
+
+  // track hvilket cv der vises for at kunne gemme
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 70 }).current;
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (viewableItems?.length) {
+      const first = viewableItems[0]?.item;
+      currentItemRef.current = first || null;
+      setCurrentCv(first || null);
+    }
+  }).current;
+
+  // pan responder til swipe ned
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) => {
+        const vy = Math.abs(g.dy);
+        const vx = Math.abs(g.dx);
+        return vy > 15 && vy > vx * 1.5;
+      },
+      onPanResponderMove: (_, g) => {
+        if (g.dy > 0) {
+          translateY.setValue(g.dy);
+        }
+      },
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 60) {
+          saveContact(currentItemRef.current);
+        }
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+          speed: 20,
+          bounciness: 8,
+        }).start();
+      },
+    })
+  ).current;
+
   // ingen data
   if (cvs.length === 0) {
     return (
@@ -325,12 +407,33 @@ export default function SwipeCVScreen() {
         </View>
       ) : null}
 
+      {contactSaved ? (
+        <View
+          style={{
+            position: "absolute",
+            top: Platform.OS === "ios" ? 80 : 60,
+            alignSelf: "center",
+            backgroundColor: "rgba(0,200,0,0.9)",
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            borderRadius: 20,
+            zIndex: 10,
+          }}
+        >
+          <Text style={{ color: "#fff", fontWeight: "700" }}>
+            ✓ Tilføjet til kontakter
+          </Text>
+        </View>
+      ) : null}
+
       <FlatList
         data={visibleCvs}
         keyExtractor={(item) => item.uid}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         renderItem={({ item }) => {
           const hasValidPhoto =
             item.photoUrl &&
@@ -338,11 +441,19 @@ export default function SwipeCVScreen() {
             item.photoUrl.startsWith("http");
 
           return (
-            <Pressable
-              style={{ width, height }}
-              onPress={() => navigation.navigate("CVDetail", { cv: item })}
+            <Animated.View
+              style={{
+                width,
+                height,
+                transform: [{ translateY }],
+              }}
+              {...panResponder.panHandlers}
             >
-              {hasValidPhoto ? (
+              <Pressable
+                style={{ width, height }}
+                onPress={() => navigation.navigate("CVDetail", { cv: item })}
+              >
+                {hasValidPhoto ? (
                 <ImageBackground
                   source={{ uri: item.photoUrl }}
                   style={{ width, height }}
@@ -367,7 +478,8 @@ export default function SwipeCVScreen() {
                   <InfoBlock item={item} />
                 </View>
               )}
-            </Pressable>
+              </Pressable>
+            </Animated.View>
           );
         }}
       />

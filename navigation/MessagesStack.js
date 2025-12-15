@@ -14,7 +14,7 @@ export default function MessagesStack() {
       <Stack.Screen
         name="ChatList"
         component={ChatListScreen}
-        options={{ title: "Beskeder" }}
+        options={{ title: "Kontakter" }}
       />
 
       {/* individuel chat med en anden bruger */}

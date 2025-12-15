@@ -52,18 +52,18 @@ export default function TabsNavigator() {
         }}
       />
 
-      {/* beskeder og chat */}
-<Tab.Screen
-  name="Messages"
-  component={MessagesStack}
-  options={{
-    title: "Messages",
-    unmountOnBlur: true, // smider stacken væk ved tab-skift
-    tabBarIcon: ({ color, size }) => (
-      <Ionicons name="chatbubbles-outline" size={size} color={color} />
-    ),
-  }}
-/>
+      {/* kontakter og chat */}
+      <Tab.Screen
+        name="Messages"
+        component={MessagesStack}
+        options={{
+          title: "Kontakter",
+          unmountOnBlur: true, // smider stacken væk ved tab-skift
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubbles-outline" size={size} color={color} />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }
