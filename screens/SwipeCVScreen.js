@@ -37,6 +37,7 @@ export default function SwipeCVScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [criteria, setCriteria] = useState({
     skills: "",
+    languages: "",
     minAge: "",
     maxAge: "",
     city: "",
@@ -149,6 +150,11 @@ export default function SwipeCVScreen() {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
 
+      const languageList = (criteria.languages || "")
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+
       const base = cvs.filter((it) => {
         if (skillList.length) {
           const itemSkills = Array.isArray(it.skills)
@@ -157,6 +163,15 @@ export default function SwipeCVScreen() {
             ? [String(it.skills).toLowerCase()]
             : [];
           const hasAll = skillList.every((s) => itemSkills.some((is) => is.includes(s)));
+          if (!hasAll) return false;
+        }
+        if (languageList.length) {
+          const itemLanguages = Array.isArray(it.languages)
+            ? it.languages.map((s) => String(s).toLowerCase())
+            : it.languages
+            ? [String(it.languages).toLowerCase()]
+            : [];
+          const hasAll = languageList.every((s) => itemLanguages.some((is) => is.includes(s)));
           if (!hasAll) return false;
         }
         const age = it.age != null ? Number(it.age) : null;
@@ -294,7 +309,7 @@ export default function SwipeCVScreen() {
   // ingen data
   if (cvs.length === 0) {
     return (
-      <View style={[GlobalStyles.container, { backgroundColor: "black" }]}>
+      <View style={[GlobalStyles.container, { backgroundColor: "#f8f9fa" }]}>
         <Text style={GlobalStyles.title}>Ingen CV'er fundet</Text>
       </View>
     );
@@ -309,59 +324,68 @@ export default function SwipeCVScreen() {
         right: 0,
         bottom: tabBarHeight + 16,
         padding: 20,
-        backgroundColor: "rgba(0,0,0,0.35)",
+        backgroundColor: "#fff",
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderRadius: 12,
+        shadowColor: "#000",
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
       }}
     >
       <Text
         style={{
-          fontSize: 22,
+          fontSize: 20,
           fontWeight: "700",
-          color: "#fff",
-          marginBottom: 8,
+          color: "#1a1a1a",
+          marginBottom: 4,
         }}
       >
         {item.headline ? item.headline : "Andres CV"}
       </Text>
 
-      {item.city ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>📍 {item.city}</Text>
-      ) : item.region ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>📍 {item.region}</Text>
-      ) : null}
+      <Text style={{ fontSize: 14, color: "#666", marginBottom: 12 }}>
+        {item.jobTitle || "Professionel"}
+      </Text>
 
-      {item.educationLevel ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>
-          🎓 {item.educationLevel}
+      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
+        📍 {item.city || item.region || "Lokation ikke angivet"}
+      </Text>
+
+      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
+        👤 {item.age ? `${item.age} år` : "Alder ikke angivet"}
+      </Text>
+
+      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
+        💼 {item.yearsExp ? `${item.yearsExp} års erfaring` : "Erfaring ikke angivet"}
+      </Text>
+
+      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
+        🎓 {item.educationLevel || "Uddannelse ikke angivet"}
+      </Text>
+
+      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
+        🕓 {item.availability || "Tilgængelighed ikke angivet"}
+      </Text>
+
+      <View style={{ marginBottom: 8 }}>
+        <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "600", marginBottom: 4 }}>
+          SKILLS
         </Text>
-      ) : null}
-
-      {item.age ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>👤 {item.age} år</Text>
-      ) : null}
-
-      {item.yearsExp ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>
-          💼 {item.yearsExp} års erfaring
+        <Text style={{ fontSize: 14, color: item.skills ? "#333" : "#999" }}>
+          {item.skills ? toLabel(item.skills) : "Ikke angivet"}
         </Text>
-      ) : null}
+      </View>
 
-      {item.availability ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>
-          🕓 {item.availability}
+      <View style={{ marginBottom: 8 }}>
+        <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "600", marginBottom: 4 }}>
+          SPROG
         </Text>
-      ) : null}
-
-      {item.skills ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>
-          🧠 {toLabel(item.skills)}
+        <Text style={{ fontSize: 14, color: item.languages ? "#333" : "#999" }}>
+          {item.languages ? toLabel(item.languages) : "Ikke angivet"}
         </Text>
-      ) : null}
-
-      {item.languages ? (
-        <Text style={{ fontSize: 16, color: "#fff" }}>
-          🌍 {toLabel(item.languages)}
-        </Text>
-      ) : null}
+      </View>
 
       {filterTarget && item.cityLat && item.cityLon ? (
         (() => {
@@ -370,8 +394,8 @@ export default function SwipeCVScreen() {
           if (isFinite(lat) && isFinite(lon)) {
             const d = haversineKm(filterTarget.latitude, filterTarget.longitude, lat, lon);
             return (
-              <Text style={{ fontSize: 14, color: "#fff", marginTop: 6 }}>
-                📏 ca. {Math.round(d)} km
+              <Text style={{ fontSize: 12, color: "#999", marginTop: 6 }}>
+                📏 ca. {Math.round(d)} km væk
               </Text>
             );
           }
@@ -383,13 +407,13 @@ export default function SwipeCVScreen() {
 
   // render af cv-kort
   return (
-    <View style={{ flex: 1, backgroundColor: "black" }}>
+    <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       <TouchableOpacity
-        style={styles.fab}
+        style={[styles.fab, { backgroundColor: "#0066cc" }]}
         onPress={() => setModalVisible(true)}
         accessibilityLabel="Åbn søgekriterier"
       >
-        <Ionicons name="add" size={22} color="#fff" />
+        <Ionicons name="funnel" size={22} color="#fff" />
       </TouchableOpacity>
 
       {geoLoading ? (
@@ -398,13 +422,17 @@ export default function SwipeCVScreen() {
             position: "absolute",
             top: 60,
             right: 12,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            padding: 8,
+            backgroundColor: "#fff",
+            padding: 12,
             borderRadius: 10,
+            shadowColor: "#000",
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
             zIndex: 5,
           }}
         >
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color="#0066cc" />
         </View>
       ) : null}
 
@@ -414,11 +442,15 @@ export default function SwipeCVScreen() {
             position: "absolute",
             top: Platform.OS === "ios" ? 80 : 60,
             alignSelf: "center",
-            backgroundColor: "rgba(0,200,0,0.9)",
+            backgroundColor: "#0066cc",
             paddingVertical: 12,
             paddingHorizontal: 20,
             borderRadius: 20,
             zIndex: 10,
+            shadowColor: "#000",
+            shadowOpacity: 0.2,
+            shadowRadius: 6,
+            elevation: 4,
           }}
         >
           <Text style={{ color: "#fff", fontWeight: "700" }}>
@@ -461,22 +493,34 @@ export default function SwipeCVScreen() {
                   style={{ width, height }}
                   resizeMode="cover"
                 >
-                  <InfoBlock item={item} />
+                  <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}>
+                    <InfoBlock item={item} />
+                  </View>
                 </ImageBackground>
               ) : (
                 <View
                   style={{
                     width,
                     height,
-                    backgroundColor: "#111",
+                    backgroundColor: "#f0f2f5",
                     alignItems: "center",
                     justifyContent: "center",
                     padding: 20,
                   }}
                 >
-                  <Text style={{ color: "#aaa", marginBottom: 12 }}>
-                    Intet billede
-                  </Text>
+                  <View
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 40,
+                      backgroundColor: "#ddd",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: 16,
+                    }}
+                  >
+                    <Ionicons name="person" size={40} color="#999" />
+                  </View>
                   <InfoBlock item={item} />
                 </View>
               )}
@@ -489,16 +533,29 @@ export default function SwipeCVScreen() {
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={{ fontWeight: "700", fontSize: 18, marginBottom: 8 }}>
-              Søg efter kriterier
-            </Text>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <Text style={{ fontWeight: "700", fontSize: 18, color: "#1a1a1a" }}>
+                Søg efter kriterier
+              </Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#999" />
+              </TouchableOpacity>
+            </View>
 
             <TextInput
               placeholder="Skills (komma-separeret)"
               value={criteria.skills}
               onChangeText={(t) => setCriteria((c) => ({ ...c, skills: t }))}
               style={styles.input}
-              placeholderTextColor="#666"
+              placeholderTextColor="#999"
+            />
+
+            <TextInput
+              placeholder="Sprog (komma-separeret)"
+              value={criteria.languages}
+              onChangeText={(t) => setCriteria((c) => ({ ...c, languages: t }))}
+              style={styles.input}
+              placeholderTextColor="#999"
             />
 
             <View style={{ flexDirection: "row", gap: 8 }}>
@@ -508,7 +565,7 @@ export default function SwipeCVScreen() {
                 onChangeText={(t) => setCriteria((c) => ({ ...c, minAge: t }))}
                 style={[styles.input, { flex: 1 }]}
                 keyboardType="number-pad"
-                placeholderTextColor="#666"
+                placeholderTextColor="#999"
               />
               <TextInput
                 placeholder="Max alder"
@@ -516,23 +573,24 @@ export default function SwipeCVScreen() {
                 onChangeText={(t) => setCriteria((c) => ({ ...c, maxAge: t }))}
                 style={[styles.input, { flex: 1 }]}
                 keyboardType="number-pad"
-                placeholderTextColor="#666"
+                placeholderTextColor="#999"
               />
             </View>
 
             <TextInput
-              placeholder="By (tekstmatch)"
+              placeholder="By"
               value={criteria.city}
               onChangeText={(t) => setCriteria((c) => ({ ...c, city: t }))}
               style={styles.input}
-              placeholderTextColor="#666"
+              placeholderTextColor="#999"
             />
 
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-              <Text style={{ flex: 1 }}>Brug min position</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12, padding: 12, backgroundColor: "#f8f9fa", borderRadius: 8 }}>
+              <Text style={{ flex: 1, color: "#1a1a1a", fontWeight: "500" }}>Brug min position</Text>
               <Switch
                 value={!!criteria.useMyLocation}
                 onValueChange={(v) => setCriteria((c) => ({ ...c, useMyLocation: v }))}
+                trackColor={{ false: "#ddd", true: "#0066cc" }}
               />
             </View>
 
@@ -542,14 +600,15 @@ export default function SwipeCVScreen() {
               onChangeText={(t) => setCriteria((c) => ({ ...c, maxDistanceKm: t }))}
               style={styles.input}
               keyboardType="numeric"
-              placeholderTextColor="#666"
+              placeholderTextColor="#999"
             />
 
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12 }}>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
               <TouchableOpacity
                 onPress={() =>
                   setCriteria({
                     skills: "",
+                    languages: "",
                     minAge: "",
                     maxAge: "",
                     city: "",
@@ -557,21 +616,21 @@ export default function SwipeCVScreen() {
                     maxDistanceKm: "",
                   })
                 }
-                style={[styles.button, { backgroundColor: "#eee" }]}
+                style={[styles.button, { backgroundColor: "#f0f2f5", flex: 1 }]}
               >
-                <Text>Ryd</Text>
+                <Text style={{ color: "#1a1a1a", fontWeight: "600" }}>Ryd</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
-                style={[styles.button, { backgroundColor: "#ccc" }]}
+                style={[styles.button, { backgroundColor: "#e8e8e8", flex: 1 }]}
               >
-                <Text>Annuller</Text>
+                <Text style={{ color: "#666", fontWeight: "600" }}>Annuller</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
-                style={[styles.button, { backgroundColor: "#111" }]}
+                style={[styles.button, { backgroundColor: "#0066cc", flex: 1 }]}
               >
-                <Text style={{ color: "#fff" }}>Anvend</Text>
+                <Text style={{ color: "#fff", fontWeight: "600" }}>Anvend</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -587,32 +646,42 @@ const styles = StyleSheet.create({
     top: Platform.OS === "ios" ? 44 : 16,
     right: 12,
     zIndex: 10,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    padding: 10,
-    borderRadius: 22,
+    backgroundColor: "#0066cc",
+    padding: 12,
+    borderRadius: 28,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 5,
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    padding: 20,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "flex-end",
+    padding: 0,
   },
   modalCard: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 30,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    padding: 10,
+    borderColor: "#e0e0e0",
+    padding: 12,
     borderRadius: 8,
-    marginBottom: 8,
+    marginBottom: 12,
     color: "#000",
+    backgroundColor: "#fafafa",
+    fontSize: 14,
   },
   button: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

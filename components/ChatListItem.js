@@ -15,7 +15,7 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
   };
 
   return (
-    <View style={{ paddingHorizontal: 12, paddingVertical: 10 }}>
+    <View style={{ paddingHorizontal: 12, paddingVertical: 10, backgroundColor: "#f8f9fa" }}>
       <TouchableOpacity
         onPress={() => onPress?.(item)}
         style={{
@@ -25,14 +25,14 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
           paddingVertical: 14,
           paddingHorizontal: 16,
           borderRadius: 12,
-          backgroundColor: "#0f1220",
-          borderWidth: 1.5,
-          borderColor: "#00d4ff",
-          shadowColor: "#00d4ff",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.3,
-          shadowRadius: 6,
-          elevation: 5,
+          backgroundColor: "#ffffff",
+          borderWidth: 1,
+          borderColor: "#e0e7ff",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
+          elevation: 2,
         }}
       >
         <TouchableOpacity
@@ -41,12 +41,12 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
             width: 52,
             height: 52,
             borderRadius: 26,
-            backgroundColor: "#1a1f3a",
+            backgroundColor: "#f0f6ff",
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
             borderWidth: 2,
-            borderColor: "#00ff88",
+            borderColor: "#0066cc",
           }}
         >
           {item.photoUrl ? (
@@ -55,17 +55,17 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
               style={{ width: 52, height: 52, borderRadius: 26 }}
             />
           ) : (
-            <Text style={{ fontWeight: "800", fontSize: 18, color: "#00ff88" }}>
+            <Text style={{ fontWeight: "800", fontSize: 18, color: "#0066cc" }}>
               {item.otherUsername?.slice(0, 1)?.toUpperCase() || "?"}
             </Text>
           )}
         </TouchableOpacity>
 
         <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: "700", fontSize: 15, color: "#00ff88", marginBottom: 4 }} numberOfLines={1}>
+          <Text style={{ fontWeight: "700", fontSize: 15, color: "#1a1a1a", marginBottom: 4 }} numberOfLines={1}>
             {item.otherUsername || item.otherUid}
           </Text>
-          <Text style={{ color: "#00d4ff", fontSize: 12, opacity: 0.85 }} numberOfLines={1}>
+          <Text style={{ color: "#0066cc", fontSize: 12, opacity: 0.85 }} numberOfLines={1}>
             {item.lastMessage || "Ingen samtale endnu"}
           </Text>
         </View>
@@ -75,7 +75,7 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityLabel="Slet samtale"
         >
-          <Ionicons name="ellipsis-vertical" size={20} color="#00d4ff" />
+          <Ionicons name="ellipsis-vertical" size={20} color="#0066cc" />
         </TouchableOpacity>
       </TouchableOpacity>
     </View>

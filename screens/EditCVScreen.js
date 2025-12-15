@@ -79,7 +79,7 @@ export default function EditCVScreen({ navigation }) {
           accessibilityLabel="Gem CV"
           style={{ marginRight: 12, opacity: saving || loading ? 0.6 : 1 }}
         >
-          <Text style={{ fontWeight: "700" }}>{saving ? "Gemmer…" : "Gem"}</Text>
+          <Text style={{ fontWeight: "700", color: "#0066cc" }}>{saving ? "Gemmer…" : "Gem"}</Text>
         </TouchableOpacity>
       ),
     });
@@ -129,7 +129,7 @@ export default function EditCVScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={GlobalStyles.container}
+      style={[GlobalStyles.container, { backgroundColor: "#f8f9fa" }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={keyboardOffset}
     >
@@ -153,20 +153,22 @@ export default function EditCVScreen({ navigation }) {
                   height: 140,
                   borderRadius: 8,
                   marginBottom: 8,
-                  backgroundColor: "#eee",
+                  backgroundColor: "#f0f6ff",
+                  borderWidth: 1,
+                  borderColor: "#cfe0ff",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <Ionicons name="camera-outline" size={40} color="#666" />
+                <Ionicons name="camera-outline" size={40} color="#0066cc" />
               </View>
             )}
           </TouchableOpacity>
 
           <TextInput
             placeholder="Headline fx Frontend udvikler eller Dataanalytiker"
-            placeholderTextColor="#888"
-            style={[GlobalStyles.input, { width: "100%" }]}
+            placeholderTextColor="#999"
+            style={[GlobalStyles.input, { width: "100%", borderColor: "#e0e7ff" }]}
             value={headline}
             onChangeText={setHeadline}
             autoCapitalize="sentences"
@@ -175,11 +177,11 @@ export default function EditCVScreen({ navigation }) {
         </View>
 
         {/* profil tekst */}
-        <Text style={{ fontWeight: "700", marginBottom: 6 }}>Profil</Text>
+        <Text style={{ fontWeight: "700", marginBottom: 6, color: "#0066cc" }}>Profil</Text>
         <TextInput
           placeholder="Kort profil eller summary"
-          placeholderTextColor="#888"
-          style={[GlobalStyles.input, { height: 160, textAlignVertical: "top" }]}
+          placeholderTextColor="#999"
+          style={[GlobalStyles.input, { height: 160, textAlignVertical: "top", borderColor: "#e0e7ff" }]}
           value={text}
           onChangeText={setText}
           multiline
@@ -187,19 +189,19 @@ export default function EditCVScreen({ navigation }) {
         />
 
         {/* by valg */}
-        <Text style={{ fontWeight: "700", marginTop: 12 }}>By</Text>
+        <Text style={{ fontWeight: "700", marginTop: 12, color: "#0066cc" }}>By</Text>
         <TextInput
           placeholder="Skriv din by (fx Aarhus eller København)"
-          placeholderTextColor="#888"
-          style={GlobalStyles.input}
+          placeholderTextColor="#999"
+          style={[GlobalStyles.input, { borderColor: "#e0e7ff" }]}
           value={city}
           onChangeText={setCity}
           autoCapitalize="words"
         />
 
         {/* uddannelsesniveau valg */}
-        <Text style={{ fontWeight: "700", marginTop: 12 }}>Uddannelsesniveau</Text>
-        <View style={[GlobalStyles.input, { padding: 0 }]}>
+        <Text style={{ fontWeight: "700", marginTop: 12, color: "#0066cc" }}>Uddannelsesniveau</Text>
+        <View style={[GlobalStyles.input, { padding: 0, borderColor: "#e0e7ff" }]}>
           <Picker selectedValue={educationLevel} onValueChange={setEducationLevel}>
             {EDU_LEVELS.map((e) => (
               <Picker.Item key={e || "empty"} label={e || "Vælg…"} value={e} />
@@ -208,11 +210,11 @@ export default function EditCVScreen({ navigation }) {
         </View>
 
         {/* alder og erfaring i år */}
-        <Text style={{ fontWeight: "700", marginTop: 12 }}>Alder og erfaring</Text>
+        <Text style={{ fontWeight: "700", marginTop: 12, color: "#0066cc" }}>Alder og erfaring</Text>
         <TextInput
           placeholder="Alder i år"
           keyboardType="number-pad"
-          style={GlobalStyles.input}
+          style={[GlobalStyles.input, { borderColor: "#e0e7ff" }]}
           value={age}
           onChangeText={setAge}
           maxLength={3}
@@ -220,15 +222,15 @@ export default function EditCVScreen({ navigation }) {
         <TextInput
           placeholder="Erfaringsår for eksempel 3"
           keyboardType="number-pad"
-          style={GlobalStyles.input}
+          style={[GlobalStyles.input, { borderColor: "#e0e7ff" }]}
           value={yearsExp}
           onChangeText={setYearsExp}
           maxLength={2}
         />
 
         {/* tilgængelighed valg */}
-        <Text style={{ fontWeight: "700", marginTop: 12 }}>Tilgængelighed</Text>
-        <View style={[GlobalStyles.input, { padding: 0 }]}>
+        <Text style={{ fontWeight: "700", marginTop: 12, color: "#0066cc" }}>Tilgængelighed</Text>
+        <View style={[GlobalStyles.input, { padding: 0, borderColor: "#e0e7ff" }]}>
           <Picker selectedValue={availability} onValueChange={setAvailability}>
             {AVAIL.map((a) => (
               <Picker.Item key={a || "empty"} label={a || "Vælg…"} value={a} />
@@ -237,17 +239,17 @@ export default function EditCVScreen({ navigation }) {
         </View>
 
         {/* skills og sprog som kommasepareret tekst */}
-        <Text style={{ fontWeight: "700", marginTop: 12 }}>Skills og sprog</Text>
+        <Text style={{ fontWeight: "700", marginTop: 12, color: "#0066cc" }}>Skills og sprog</Text>
         <TextInput
           placeholder="Skills kommasepareret for eksempel JavaScript, React, Firebase"
-          style={GlobalStyles.input}
+          style={[GlobalStyles.input, { borderColor: "#e0e7ff" }]}
           value={arrToInput(skills)}
           onChangeText={setSkills}
           autoCapitalize="none"
         />
         <TextInput
           placeholder="Sprog kommasepareret for eksempel Dansk, Engelsk"
-          style={GlobalStyles.input}
+          style={[GlobalStyles.input, { borderColor: "#e0e7ff" }]}
           value={arrToInput(languages)}
           onChangeText={setLanguages}
         />

@@ -133,11 +133,12 @@ export default function ChatListScreen({ navigation }) {
   if (!uid) return <Text style={{ padding: 16 }}>Login kræves</Text>;
 
   // viser tomtilstand hvis der ingen chats er
-  if (!items.length) return <Text style={{ padding: 16 }}>Ingen kontakter endnu</Text>;
+  if (!items.length) return <Text style={{ padding: 16, backgroundColor: "#f8f9fa", color: "#666" }}>Ingen kontakter endnu</Text>;
 
   // renderer chat listen
   return (
     <FlatList
+      style={{ backgroundColor: "#f8f9fa" }}
       data={items}
       keyExtractor={(it) => String(it.chatId)}
       renderItem={({ item }) => (

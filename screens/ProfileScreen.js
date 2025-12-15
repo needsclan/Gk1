@@ -11,7 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 // simpel knap komponent
-const Btn = ({ title, onPress, disabled }) => (
+const Btn = ({ title, onPress, disabled, variant = "primary" }) => (
   <TouchableOpacity
     onPress={onPress}
     disabled={disabled}
@@ -19,11 +19,16 @@ const Btn = ({ title, onPress, disabled }) => (
       padding: 14,
       borderRadius: 12,
       marginVertical: 8,
-      backgroundColor: "#eee",
-      opacity: disabled ? 0.6 : 1,
+      backgroundColor: disabled ? "#e8eaf0" : (variant === "secondary" ? "#fff" : "#0066cc"),
+      borderWidth: variant === "secondary" ? 1 : 0,
+      borderColor: variant === "secondary" ? "#0066cc" : "transparent",
     }}
   >
-    <Text style={{ textAlign: "center", fontWeight: "600" }}>{title}</Text>
+    <Text style={{ 
+      textAlign: "center", 
+      fontWeight: "600", 
+      color: disabled ? "#999" : (variant === "secondary" ? "#0066cc" : "#fff")
+    }}>{title}</Text>
   </TouchableOpacity>
 );
 
@@ -109,20 +114,20 @@ export default function ProfileScreen({ navigation }) {
 
   // ui med felter for e mail og kodeord
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 16, marginBottom: 8 }}>
+    <View style={{ flex: 1, padding: 16, backgroundColor: "#f8f9fa" }}>
+      <Text style={{ fontSize: 16, marginBottom: 8, color: "#1a1a1a" }}>
         Logget ind som: {user?.email || "ukendt"}
       </Text>
 
       {/* skift e mail */}
-      <Text style={{ fontWeight: "700", marginTop: 14 }}>Ny e-mail</Text>
+      <Text style={{ fontWeight: "700", marginTop: 14, color: "#0066cc" }}>Ny e-mail</Text>
       <TextInput
         value={newEmail}
         onChangeText={setNewEmail}
         autoCapitalize="none"
         keyboardType="email-address"
         placeholder="ny@adresse.dk"
-        style={{ borderWidth: 1, borderRadius: 10, padding: 10, marginTop: 6 }}
+        style={{ borderWidth: 1, borderColor: "#e0e7ff", backgroundColor: "#fff", borderRadius: 10, padding: 10, marginTop: 6 }}
       />
       <Btn
         title="Gem ny e-mail"
@@ -131,13 +136,13 @@ export default function ProfileScreen({ navigation }) {
       />
 
       {/* skift kodeord */}
-      <Text style={{ fontWeight: "700", marginTop: 14 }}>Nyt kodeord</Text>
+      <Text style={{ fontWeight: "700", marginTop: 14, color: "#0066cc" }}>Nyt kodeord</Text>
       <TextInput
         value={newPass}
         onChangeText={setNewPass}
         placeholder="Nyt kodeord"
         secureTextEntry
-        style={{ borderWidth: 1, borderRadius: 10, padding: 10, marginTop: 6 }}
+        style={{ borderWidth: 1, borderColor: "#e0e7ff", backgroundColor: "#fff", borderRadius: 10, padding: 10, marginTop: 6 }}
       />
       <Btn
         title="Gem nyt kodeord"
@@ -149,6 +154,7 @@ export default function ProfileScreen({ navigation }) {
       <View style={{ height: 12 }} />
       <Btn
         title="Log ud"
+        variant="secondary"
         onPress={async () => {
           try {
             await signOut(auth);
@@ -182,7 +188,7 @@ export default function ProfileScreen({ navigation }) {
               padding: 16,
             }}
           >
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 8 }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 8, color: "#0066cc" }}>
               Indtast dit nuværende kodeord
             </Text>
             <TextInput
@@ -190,14 +196,14 @@ export default function ProfileScreen({ navigation }) {
               onChangeText={setPwInput}
               secureTextEntry
               placeholder="Nuværende kodeord"
-              style={{ borderWidth: 1, borderRadius: 10, padding: 10, marginTop: 6 }}
+              style={{ borderWidth: 1, borderColor: "#e0e7ff", backgroundColor: "#fff", borderRadius: 10, padding: 10, marginTop: 6 }}
             />
             <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 12 }}>
               <TouchableOpacity onPress={() => setPwVisible(false)} style={{ marginRight: 16 }}>
-                <Text style={{ fontWeight: "600" }}>Annuller</Text>
+                <Text style={{ fontWeight: "600", color: "#666" }}>Annuller</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={onConfirmPassword}>
-                <Text style={{ fontWeight: "700" }}>Bekræft</Text>
+                <Text style={{ fontWeight: "700", color: "#0066cc" }}>Bekræft</Text>
               </TouchableOpacity>
             </View>
           </View>
