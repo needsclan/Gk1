@@ -1,6 +1,7 @@
 // screens/CVDetailScreen.js
 import { View, Text, Pressable, ScrollView, useWindowDimensions, Image } from "react-native";
-import { useRoute, useNavigation } from "@react-navigation/native";
+import { useRoute, useNavigation, CommonActions } from "@react-navigation/native";
+import { useEffect } from "react";
 import { auth } from "../database/database";
 
 // helper: lav værdi om til label
@@ -23,10 +24,34 @@ export default function CVDetailScreen() {
   const cv = params?.cv;
   if (!cv) return null;
 
+  // Lyt til tab skift og pop CVDetail fra stack hvis man navigerer væk
+  useEffect(() => {
+    if (!params?.fromContacts) return;
+
+    const parent = navigation.getParent();
+    if (!parent) return;
+
+    const unsubscribe = parent.addListener('state', (e) => {
+      // Tjek om vi ikke længere er på SwipeCV tab
+      const currentRoute = e.data.state.routes[e.data.state.index];
+      if (currentRoute?.name !== 'SwipeCV') {
+        // Pop CVDetail fra stacken
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        }
+      }
+    });
+
+    return unsubscribe;
+  }, [params?.fromContacts, navigation]);
+
   // hvis brugeren kom fra kontakter, skal goBack gå tilbage til Messages i stedet for SwipeList
   const handleGoBack = () => {
     if (params?.fromContacts) {
-      navigation.navigate("Messages");
+      // Pop tilbage til SwipeList
+      navigation.goBack();
+      // Gå til Messages tab
+      navigation.getParent()?.navigate("Messages");
     } else {
       navigation.goBack();
     }

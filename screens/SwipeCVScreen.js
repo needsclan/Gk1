@@ -51,6 +51,7 @@ export default function SwipeCVScreen() {
   const [contactSaved, setContactSaved] = useState(false);
   const currentItemRef = useRef(null);
   const translateY = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef(null);
 
   const tabBarHeight = useBottomTabBarHeight();
   const { width, height } = useWindowDimensions();
@@ -427,6 +428,7 @@ export default function SwipeCVScreen() {
       ) : null}
 
       <FlatList
+        ref={flatListRef}
         data={visibleCvs}
         keyExtractor={(item) => item.uid}
         horizontal
