@@ -1,8 +1,8 @@
 import React, { memo } from "react";
-import { View, Text, TouchableOpacity, Alert } from "react-native";
+import { View, Text, TouchableOpacity, Alert, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-function ChatListItem({ item, onPress, onDelete }) {
+function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
   const confirmDelete = () => {
     Alert.alert(
       "Slet samtale",
@@ -30,17 +30,26 @@ function ChatListItem({ item, onPress, onDelete }) {
         onPress={() => onPress?.(item)}
         style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
       >
-        <View
+        <TouchableOpacity
+          onPress={() => onViewProfile?.()}
           style={{
             width: 36, height: 36, borderRadius: 18,
             backgroundColor: "#eee", alignItems: "center", justifyContent: "center",
             marginRight: 12,
+            overflow: "hidden",
           }}
         >
-          <Text style={{ fontWeight: "700" }}>
-            {item.otherUsername?.slice(0,1)?.toUpperCase() || "?"}
-          </Text>
-        </View>
+          {item.photoUrl ? (
+            <Image
+              source={{ uri: item.photoUrl }}
+              style={{ width: 36, height: 36, borderRadius: 18 }}
+            />
+          ) : (
+            <Text style={{ fontWeight: "700" }}>
+              {item.otherUsername?.slice(0,1)?.toUpperCase() || "?"}
+            </Text>
+          )}
+        </TouchableOpacity>
 
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: "700" }} numberOfLines={1}>

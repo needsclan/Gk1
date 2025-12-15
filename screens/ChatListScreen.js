@@ -1,6 +1,6 @@
 // screens/ChatListScreen.js
 import React, { useEffect, useState, useCallback } from "react";
-import { FlatList, Text } from "react-native";
+import { FlatList, Text, Image } from "react-native";
 import {
   ref,
   onValue,
@@ -29,19 +29,34 @@ export default function ChatListScreen({ navigation }) {
     const q = query(userChatsRef, orderByChild("updatedAt"));
 
     // gemmer reference til callback for at kunne afmelde senere
-    const callback = (snap) => {
+    const callback = async (snap) => {
       // læser data eller bruger tomt objekt
       const val = snap.val() || {};
 
       // mapper objekt til en liste egnet til flatlist
-      const arr = Object.entries(val).map(([chatId, v]) => ({
-        chatId,
-        otherUid: v.otherUid,
-        // falder tilbage til alternative felter hvis brugernavn mangler
-        otherUsername: v.otherUsername || v.otheruid || v.otherUid,
-        lastMessage: v.lastMessage || "",
-        updatedAt: v.updatedAt || 0,
-      }));
+      const arr = await Promise.all(
+        Object.entries(val).map(async ([chatId, v]) => {
+          // henter photoUrl fra den anden brugers CV
+          let photoUrl = null;
+          try {
+            const cvSnap = await get(ref(rtdb, `cvs/${v.otherUid}/photoUrl`));
+            if (cvSnap.exists()) {
+              photoUrl = cvSnap.val();
+            }
+          } catch (err) {
+            // stille hvis det fejler
+          }
+
+          return {
+            chatId,
+            otherUid: v.otherUid,
+            otherUsername: v.otherUsername || v.otheruid || v.otherUid,
+            lastMessage: v.lastMessage || "",
+            updatedAt: v.updatedAt || 0,
+            photoUrl,
+          };
+        })
+      );
 
       // sorterer nyeste besked øverst
       arr.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -65,6 +80,29 @@ export default function ChatListScreen({ navigation }) {
         otherUid: it.otherUid,
         otherUsername: it.otherUsername,
       });
+    },
+    [navigation]
+  );
+
+  // viser anden brugers profil (navigerer direkte uden at blive på SwipeList)
+  const viewProfile = useCallback(
+    async (otherUid) => {
+      try {
+        const cvSnap = await get(ref(rtdb, `cvs/${otherUid}`));
+        if (cvSnap.exists()) {
+          const cv = cvSnap.val();
+          // Navigerer til CVDetail og gemmer tidligere screen så man kan gå tilbage til Messages
+          navigation.navigate("SwipeCV", {
+            screen: "CVDetail",
+            params: {
+              cv: { uid: otherUid, ...cv },
+              fromContacts: true,
+            },
+          });
+        }
+      } catch (err) {
+        console.warn("Kunne ikke hente profil", err);
+      }
     },
     [navigation]
   );
@@ -103,7 +141,12 @@ export default function ChatListScreen({ navigation }) {
       data={items}
       keyExtractor={(it) => String(it.chatId)}
       renderItem={({ item }) => (
-        <ChatListItem item={item} onPress={open} onDelete={deleteChat} />
+        <ChatListItem
+          item={item}
+          onPress={open}
+          onDelete={deleteChat}
+          onViewProfile={() => viewProfile(item.otherUid)}
+        />
       )}
     />
   );
