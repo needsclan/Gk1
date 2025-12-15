@@ -21,7 +21,7 @@ export default function MessagesStack() {
       <Stack.Screen
         name="Chat"
         component={ChatScreen}
-        options={{ title: "Chat" }}
+        options={{ title: "" }}
       />
     </Stack.Navigator>
   );

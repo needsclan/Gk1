@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback, useLayoutEffect, useRef } from "react";
 import {
   View, FlatList, TextInput, TouchableOpacity, Text,
-  KeyboardAvoidingView, Platform
+  KeyboardAvoidingView, Platform, ImageBackground
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -48,7 +48,7 @@ export default function ChatScreen() {
   // header med fast knap til ChatList
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: otherName || "Chat",
+      title: otherName || "",
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.navigate("Messages", { screen: "ChatList" })}
@@ -116,11 +116,17 @@ export default function ChatScreen() {
     : (insets.bottom || 0) + 40;
 
   return (
-    <KeyboardAvoidingView
+    <ImageBackground
+      source={require('../assets/image.png')}
       style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={keyboardOffset}
+      resizeMode="center"
+      imageStyle={{ opacity: 0.08 }}
     >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={keyboardOffset}
+      >
       <FlatList
         ref={flatListRef}
         style={{ flex: 1, padding: 12 }}
@@ -142,7 +148,14 @@ export default function ChatScreen() {
         }}
       />
 
-      <View style={{ flexDirection: "row", padding: 8, borderTopWidth: 1, borderColor: "#eee", backgroundColor: "#fff" }}>
+      <View style={{ 
+        flexDirection: "row", 
+        padding: 8, 
+        borderTopWidth: 1, 
+        borderColor: "#eee", 
+        backgroundColor: "#fff",
+        paddingBottom: 24
+      }}>
         <TextInput
           value={text}
           onChangeText={setText}
@@ -156,5 +169,6 @@ export default function ChatScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }

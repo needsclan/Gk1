@@ -55,9 +55,11 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
               style={{ width: 52, height: 52, borderRadius: 26 }}
             />
           ) : (
-            <Text style={{ fontWeight: "800", fontSize: 18, color: "#0066cc" }}>
-              {item.otherUsername?.slice(0, 1)?.toUpperCase() || "?"}
-            </Text>
+            <Image
+              source={require('../assets/image.png')}
+              style={{ width: 40, height: 40, opacity: 0.3 }}
+              resizeMode="contain"
+            />
           )}
         </TouchableOpacity>
 

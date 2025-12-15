@@ -1,7 +1,7 @@
 // screens/CVDetailScreen.js
-import { View, Text, Pressable, ScrollView, useWindowDimensions, Image } from "react-native";
+import { View, Text, ScrollView, useWindowDimensions, Image, TouchableOpacity, Pressable } from "react-native";
 import { useRoute, useNavigation, CommonActions } from "@react-navigation/native";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 import { auth } from "../database/database";
 
 // helper: lav værdi om til label
@@ -59,94 +59,115 @@ export default function CVDetailScreen() {
 
   // hovedlayout
   return (
-    <Pressable style={{ flex: 1, backgroundColor: "#000" }} onPress={handleGoBack}>
-      <View style={{ flex: 1, padding: 24 }}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        >
-          {/* Øverste sektion: Headline med billede til højre */}
-          <View style={{ flexDirection: "row", marginBottom: 20, alignItems: "flex-start", gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 24, fontWeight: "800", color: "#fff" }}>
-                {cv.headline || "CV"}
-              </Text>
-            </View>
-            {cv.photoUrl && (
+    <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+          {/* Profilbillede øverst */}
+          <TouchableOpacity 
+            onPress={handleGoBack}
+            style={{ alignItems: "center", paddingTop: 20, paddingBottom: 16, backgroundColor: "#fff" }}
+            activeOpacity={0.7}
+          >
+            {cv.photoUrl ? (
               <Image
                 source={{ uri: cv.photoUrl }}
-                style={{ width: 70, height: 70, borderRadius: 35 }}
+                style={{ width: 140, height: 140, borderRadius: 70, borderWidth: 3, borderColor: "#0066cc" }}
+              />
+            ) : (
+              <Image
+                source={require('../assets/image.png')}
+                style={{
+                  width: 140,
+                  height: 140,
+                  borderRadius: 70,
+                  borderWidth: 3,
+                  borderColor: "#0066cc",
+                }}
+                resizeMode="cover"
               />
             )}
+          </TouchableOpacity>
+          <View style={{ backgroundColor: "#fff", marginHorizontal: 16, marginTop: 8, borderRadius: 12, padding: 20, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 }}>
+            <Text style={{ fontSize: 22, fontWeight: "700", color: "#1a1a1a", marginBottom: 4, textAlign: "center" }}>
+              {cv.headline || "CV"}
+            </Text>
+            <Text style={{ fontSize: 14, color: "#666", marginBottom: 16, textAlign: "center" }}>
+              {cv.jobTitle || "Professionel"}
+            </Text>
+
+            {/* To kolonner */}
+            <View style={{ flexDirection: "row", gap: 16, marginBottom: 16 }}>
+              {/* Venstre kolonne */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "700", marginBottom: 4 }}>
+                  LOKATION
+                </Text>
+                <Text style={{ fontSize: 14, color: "#333", marginBottom: 12 }}>
+                  {cv.city || cv.region || "Ikke angivet"}
+                </Text>
+
+                <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "700", marginBottom: 4 }}>
+                  ALDER
+                </Text>
+                <Text style={{ fontSize: 14, color: "#333", marginBottom: 12 }}>
+                  {cv.age ? `${cv.age} år` : "Ikke angivet"}
+                </Text>
+
+                <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "700", marginBottom: 4 }}>
+                  ERFARING
+                </Text>
+                <Text style={{ fontSize: 14, color: "#333", marginBottom: 12 }}>
+                  {cv.yearsExp ? `${cv.yearsExp} års erfaring` : "Ikke angivet"}
+                </Text>
+
+                <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "700", marginBottom: 4 }}>
+                  UDDANNELSE
+                </Text>
+                <Text style={{ fontSize: 14, color: "#333", marginBottom: 12 }}>
+                  {cv.educationLevel || "Ikke angivet"}
+                </Text>
+              </View>
+
+              {/* Højre kolonne */}
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "700", marginBottom: 4 }}>
+                  TILGÆNGELIGHED
+                </Text>
+                <Text style={{ fontSize: 14, color: "#333", marginBottom: 12 }}>
+                  {cv.availability || "Ikke angivet"}
+                </Text>
+
+                <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "700", marginBottom: 4 }}>
+                  SKILLS
+                </Text>
+                <Text style={{ fontSize: 14, color: cv.skills ? "#333" : "#999", marginBottom: 12 }}>
+                  {cv.skills ? toLabel(cv.skills) : "Ikke angivet"}
+                </Text>
+
+                <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "700", marginBottom: 4 }}>
+                  SPROG
+                </Text>
+                <Text style={{ fontSize: 14, color: cv.languages ? "#333" : "#999", marginBottom: 12 }}>
+                  {cv.languages ? toLabel(cv.languages) : "Ikke angivet"}
+                </Text>
+              </View>
+            </View>
           </View>
-
-          {/* Oplysninger liste */}
-          {/* By */}
-          {cv.city ? (
-            <Text style={{ fontSize: 15, color: "#fff", marginBottom: 8 }}>
-              📍 {cv.city}
-            </Text>
-          ) : cv.region ? (
-            <Text style={{ fontSize: 15, color: "#fff", marginBottom: 8 }}>
-              📍 {cv.region}
-            </Text>
-          ) : null}
-
-          {/* Uddannelse */}
-          {cv.educationLevel && (
-            <Text style={{ fontSize: 15, color: "#fff", marginBottom: 8 }}>
-              🎓 {cv.educationLevel}
-            </Text>
-          )}
-
-          {/* Alder */}
-          {cv.age && (
-            <Text style={{ fontSize: 15, color: "#fff", marginBottom: 8 }}>
-              👤 {cv.age} år
-            </Text>
-          )}
-
-          {/* Erfaring */}
-          {cv.yearsExp && (
-            <Text style={{ fontSize: 15, color: "#fff", marginBottom: 8 }}>
-              💼 {cv.yearsExp} års erfaring
-            </Text>
-          )}
-
-          {/* Tilgængelighed */}
-          {cv.availability && (
-            <Text style={{ fontSize: 15, color: "#fff", marginBottom: 8 }}>
-              🕓 {cv.availability}
-            </Text>
-          )}
-
-          {/* Skills */}
-          {cv.skills && (
-            <Text style={{ fontSize: 15, color: "#fff", marginBottom: 8 }}>
-              🧠 {toLabel(cv.skills)}
-            </Text>
-          )}
-
-          {/* Sprog */}
-          {cv.languages && (
-            <Text style={{ fontSize: 15, color: "#fff", marginBottom: 20 }}>
-              🌍 {toLabel(cv.languages)}
-            </Text>
-          )}
 
           {/* Profiltekst nedenunder */}
           {cv.text && (
-            <>
-              <Text style={{ fontSize: 14, fontWeight: "700", color: "#aaa", marginBottom: 8 }}>
-                Profil
+            <View style={{ backgroundColor: "#fff", marginHorizontal: 16, marginTop: 8, borderRadius: 12, padding: 20, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 }}>
+              <Text style={{ fontSize: 14, fontWeight: "700", color: "#0066cc", marginBottom: 8 }}>
+                PROFIL
               </Text>
-              <Text style={{ fontSize: 15, color: "#fff", lineHeight: 22 }}>
+              <Text style={{ fontSize: 15, color: "#333", lineHeight: 22 }}>
                 {cv.text}
               </Text>
-            </>
+            </View>
           )}
         </ScrollView>
-      </View>
-    </Pressable>
+    </View>
   );
 }

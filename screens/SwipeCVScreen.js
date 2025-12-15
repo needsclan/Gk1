@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   PanResponder,
   Animated,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import GlobalStyles from "../style/GlobalStyle";
@@ -323,16 +324,16 @@ export default function SwipeCVScreen() {
         left: 0,
         right: 0,
         bottom: tabBarHeight + 16,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingVertical: 20,
+        paddingHorizontal: 20,
         backgroundColor: "#fff",
         marginHorizontal: 16,
         marginBottom: 16,
         borderRadius: 12,
         shadowColor: "#000",
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        elevation: 4,
       }}
     >
       <Text
@@ -340,14 +341,14 @@ export default function SwipeCVScreen() {
           fontSize: 18,
           fontWeight: "700",
           color: "#1a1a1a",
-          marginBottom: 2,
+          marginBottom: 4,
         }}
         numberOfLines={1}
       >
         {item.headline ? item.headline : "Andres CV"}
       </Text>
 
-      <Text style={{ fontSize: 12, color: "#666", marginBottom: 8 }} numberOfLines={1}>
+      <Text style={{ fontSize: 13, color: "#666", marginBottom: 10 }} numberOfLines={1}>
         {item.jobTitle || "Professionel"}
       </Text>
 
@@ -355,35 +356,35 @@ export default function SwipeCVScreen() {
       <View style={{ flexDirection: "row", gap: 12 }}>
         {/* Venstre kolonne */}
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }} numberOfLines={1}>
             📍 {item.city || item.region || "Ikke angivet"}
           </Text>
-          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }} numberOfLines={1}>
             👤 {item.age ? `${item.age} år` : "Ikke angivet"}
           </Text>
-          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }} numberOfLines={1}>
             💼 {item.yearsExp ? `${item.yearsExp} år` : "Ingen erfaring"}
           </Text>
-          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }} numberOfLines={1}>
             🎓 {item.educationLevel || "Ikke angivet"}
           </Text>
         </View>
 
         {/* Højre kolonne */}
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }} numberOfLines={1}>
             🕓 {item.availability || "Ikke angivet"}
           </Text>
           <Text style={{ fontSize: 10, color: "#0066cc", fontWeight: "600", marginTop: 2 }}>
             SKILLS
           </Text>
-          <Text style={{ fontSize: 11, color: item.skills ? "#333" : "#999", marginBottom: 4 }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: item.skills ? "#333" : "#999", marginBottom: 4 }} numberOfLines={1}>
             {item.skills ? toLabel(item.skills) : "Ikke angivet"}
           </Text>
           <Text style={{ fontSize: 10, color: "#0066cc", fontWeight: "600", marginTop: 2 }}>
             SPROG
           </Text>
-          <Text style={{ fontSize: 11, color: item.languages ? "#333" : "#999" }} numberOfLines={1}>
+          <Text style={{ fontSize: 12, color: item.languages ? "#333" : "#999" }} numberOfLines={1}>
             {item.languages ? toLabel(item.languages) : "Ikke angivet"}
           </Text>
         </View>
@@ -493,10 +494,10 @@ export default function SwipeCVScreen() {
                 <View style={{ flex: 1 }}>
                   <ImageBackground
                     source={{ uri: item.photoUrl }}
-                    style={{ flex: 0.66 }}
+                    style={{ flex: 0.70 }}
                     resizeMode="cover"
                   />
-                  <View style={{ flex: 0.34, backgroundColor: "#f8f9fa" }}>
+                  <View style={{ flex: 0.30, backgroundColor: "#f8f9fa" }}>
                     <InfoBlock item={item} />
                   </View>
                 </View>
@@ -504,30 +505,23 @@ export default function SwipeCVScreen() {
                 <View style={{ flex: 1 }}>
                   <View
                     style={{
-                      flex: 0.66,
+                      flex: 0.70,
                       backgroundColor: "#e8f0fe",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    <View
+                    <Image
+                      source={require('../assets/image.png')}
                       style={{
                         width: 120,
                         height: 120,
                         borderRadius: 60,
-                        backgroundColor: "#fff",
-                        alignItems: "center",
-                        justifyContent: "center",
                         borderWidth: 3,
                         borderColor: "#0066cc",
-                        shadowColor: "#000",
-                        shadowOpacity: 0.1,
-                        shadowRadius: 8,
-                        elevation: 4,
                       }}
-                    >
-                      <Ionicons name="person" size={60} color="#0066cc" />
-                    </View>
+                      resizeMode="cover"
+                    />
                     <Text style={{ 
                       fontSize: 14, 
                       color: "#0066cc", 
@@ -537,7 +531,7 @@ export default function SwipeCVScreen() {
                       Intet profilbillede
                     </Text>
                   </View>
-                  <View style={{ flex: 0.34, backgroundColor: "#f8f9fa" }}>
+                  <View style={{ flex: 0.30, backgroundColor: "#f8f9fa" }}>
                     <InfoBlock item={item} />
                   </View>
                 </View>

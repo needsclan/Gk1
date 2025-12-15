@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useState, useMemo } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, Modal } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, Modal, ImageBackground } from "react-native";
 import { auth } from "../database/database";
 import {
   updateEmail,
@@ -114,7 +114,13 @@ export default function ProfileScreen({ navigation }) {
 
   // ui med felter for e mail og kodeord
   return (
-    <View style={{ flex: 1, padding: 16, backgroundColor: "#f8f9fa" }}>
+    <ImageBackground
+      source={require('../assets/image.png')}
+      style={{ flex: 1, backgroundColor: "#f8f9fa" }}
+      resizeMode="center"
+      imageStyle={{ opacity: 0.15 }}
+    >
+      <View style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontSize: 16, marginBottom: 8, color: "#1a1a1a" }}>
         Logget ind som: {user?.email || "ukendt"}
       </Text>
@@ -209,6 +215,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+    </ImageBackground>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Button } from "react-native";
+import { View, Button, ImageBackground } from "react-native";
 import Signup from "../components/SignUpComponent";
 import Login from "../components/LogInComponent";
 import GlobalStyles from "../style/GlobalStyle";
@@ -9,7 +9,12 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
 
   return (
-    <View style={GlobalStyles.container}>
+    <ImageBackground
+      source={require('../assets/image.png')}
+      style={[GlobalStyles.container, { backgroundColor: "#f8f9fa" }]}
+      resizeMode="center"
+      imageStyle={{ opacity: 0.05 }}
+    >
       {/* viser enten login eller signup afhængigt af state */}
       {isLogin ? <Login /> : <Signup />}
       
@@ -24,6 +29,6 @@ export default function AuthScreen() {
           onPress={() => setIsLogin((prev) => !prev)}
         />
       </View>
-    </View>
+    </ImageBackground>
   );
 }
