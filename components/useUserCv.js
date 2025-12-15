@@ -16,6 +16,9 @@ export function useUserCv(uid) {
   const [photoUri, setPhotoUri] = useState(null);
 
   const [region, setRegion] = useState("");
+  const [city, setCity] = useState("");
+  const [cityLat, setCityLat] = useState(null);
+  const [cityLon, setCityLon] = useState(null);
   const [educationLevel, setEducationLevel] = useState("");
   const [age, setAge] = useState("");          // ui som tekst
   const [yearsExp, setYearsExp] = useState(""); 
@@ -41,6 +44,9 @@ export function useUserCv(uid) {
           setPhotoUri(data.photoUrl ?? data.photoUri ?? null);
 
           setRegion(data.region ?? "");
+          setCity(data.city ?? "");
+          setCityLat(data.cityLat ?? null);
+          setCityLon(data.cityLon ?? null);
           setEducationLevel(data.educationLevel ?? "");
           setAge(data.age != null ? String(data.age) : "");
           setYearsExp(data.yearsExp != null ? String(data.yearsExp) : "");
@@ -69,6 +75,23 @@ export function useUserCv(uid) {
     return await getDownloadURL(storageRef);
   }, []);
 
+  // geocoder bynavn via Nominatim (DK begrænset)
+  const geocodeCity = useCallback(async (name) => {
+    if (!name) return null;
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(name)}&limit=1&countrycodes=dk`;
+      const res = await fetch(url, { headers: { "User-Agent": "Gk1App/1.0" } });
+      const arr = await res.json();
+      if (arr && arr.length > 0) {
+        const { lat, lon } = arr[0];
+        return { latitude: Number(lat), longitude: Number(lon) };
+      }
+    } catch (e) {
+      console.warn("Geocode fejl", e?.message || e);
+    }
+    return null;
+  }, []);
+
   // gemmer cv data
   const save = useCallback(async (payload = {}) => {
     if (!uid) return;
@@ -93,6 +116,21 @@ export function useUserCv(uid) {
         return textVal.split(",").map(s => s.trim()).filter(Boolean);
       };
 
+      // geocode by og byg koordinater
+      const cityName = (payload.city ?? city ?? "").trim();
+      let nextCityLat = cityLat;
+      let nextCityLon = cityLon;
+      if (cityName) {
+        const coords = await geocodeCity(cityName);
+        if (coords) {
+          nextCityLat = coords.latitude;
+          nextCityLon = coords.longitude;
+        }
+      } else {
+        nextCityLat = null;
+        nextCityLon = null;
+      }
+
       // næste objekt som skrives
       const next = {
         headline: (payload.headline ?? headline ?? "").trim(),
@@ -100,6 +138,9 @@ export function useUserCv(uid) {
         photoUrl: nextPhotoUrl ?? (payload.photoUrl ?? null),
 
         region: (payload.region ?? region) || null,
+        city: cityName || null,
+        cityLat: nextCityLat,
+        cityLon: nextCityLon,
         educationLevel: (payload.educationLevel ?? educationLevel) || null,
         availability: (payload.availability ?? availability) || null,
 
@@ -127,7 +168,8 @@ export function useUserCv(uid) {
     }
   }, [
     uid, headline, text, photoUri, region, educationLevel, availability,
-    age, yearsExp, skills, languages, uploadImageAsync
+    age, yearsExp, skills, languages, city, cityLat, cityLon,
+    uploadImageAsync, geocodeCity
   ]);
 
   // eksporter state og actions
@@ -136,6 +178,7 @@ export function useUserCv(uid) {
     text, setText,
     photoUri, setPhotoUri,
     region, setRegion,
+    city, setCity,
     educationLevel, setEducationLevel,
     age, setAge,
     yearsExp, setYearsExp,

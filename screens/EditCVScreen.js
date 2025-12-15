@@ -10,15 +10,14 @@ import {
   Image,
   Alert,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GlobalStyles from "../style/GlobalStyle";
 import { auth } from "../database/database";
 import { useUserCv } from "../components/useUserCv";
-import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 
-// lister til dropdown felter
-const DK_REGIONS = ["", "Hovedstaden", "Sjælland", "Syddanmark", "Midtjylland", "Nordjylland"];
 const EDU_LEVELS = ["", "Folkeskole", "Gymnasial", "Erhvervsuddannelse", "Bachelor", "Kandidat", "PhD"];
 const AVAIL = ["", "Fuldtid", "Deltid", "Freelance/Kontrakt", "Studiejob", "Praktik"];
 
@@ -35,13 +34,14 @@ const inputToArr = (s) =>
 export default function EditCVScreen({ navigation }) {
   // aktuelt bruger id
   const uid = auth.currentUser?.uid ?? null;
+  const insets = useSafeAreaInsets();
 
   // hook som henter og gemmer cv data
   const {
     headline, setHeadline,
     text, setText,
     photoUri, setPhotoUri,
-    region, setRegion,
+    city, setCity,
     educationLevel, setEducationLevel,
     age, setAge,
     yearsExp, setYearsExp,
@@ -57,7 +57,7 @@ export default function EditCVScreen({ navigation }) {
       headline: (headline || "").trim(),
       text,
       photoUri,
-      region,
+      city,
       educationLevel,
       availability,
       age: age ? Number(age) : null,
@@ -85,7 +85,7 @@ export default function EditCVScreen({ navigation }) {
     });
   }, [
     navigation, saving, loading,
-    headline, text, photoUri, region, educationLevel, availability, age, yearsExp, skills, languages
+    headline, text, photoUri, city, educationLevel, availability, age, yearsExp, skills, languages
   ]);
 
   // viser simpel loader mens data hentes
@@ -123,15 +123,20 @@ export default function EditCVScreen({ navigation }) {
   };
 
   // hovedlayout med formular felter
+  const keyboardOffset = Platform.OS === "ios"
+    ? (insets.top || 0) + (insets.bottom || 0) + 60
+    : (insets.bottom || 0) + 60;
+
   return (
     <KeyboardAvoidingView
       style={GlobalStyles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={keyboardOffset}
     >
       <ScrollView
         contentContainerStyle={GlobalStyles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         {/* top med profilbillede og overskrift */}
         <View style={{ alignItems: "center", marginBottom: 12 }}>
@@ -181,15 +186,16 @@ export default function EditCVScreen({ navigation }) {
           maxLength={1500}
         />
 
-        {/* region valg */}
-        <Text style={{ fontWeight: "700", marginTop: 12 }}>Region</Text>
-        <View style={[GlobalStyles.input, { padding: 0 }]}>
-          <Picker selectedValue={region} onValueChange={setRegion}>
-            {DK_REGIONS.map((r) => (
-              <Picker.Item key={r || "empty"} label={r || "Vælg…"} value={r} />
-            ))}
-          </Picker>
-        </View>
+        {/* by valg */}
+        <Text style={{ fontWeight: "700", marginTop: 12 }}>By</Text>
+        <TextInput
+          placeholder="Skriv din by (fx Aarhus eller København)"
+          placeholderTextColor="#888"
+          style={GlobalStyles.input}
+          value={city}
+          onChangeText={setCity}
+          autoCapitalize="words"
+        />
 
         {/* uddannelsesniveau valg */}
         <Text style={{ fontWeight: "700", marginTop: 12 }}>Uddannelsesniveau</Text>

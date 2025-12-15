@@ -6,7 +6,15 @@ import {
   ImageBackground,
   useWindowDimensions,
   Pressable,
+  Modal,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  Switch,
+  ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import GlobalStyles from "../style/GlobalStyle";
 import { ref, get, child } from "firebase/database";
 import { rtdb, auth } from "../database/database";
@@ -21,14 +29,23 @@ const toLabel = (v) => {
   return String(v);
 };
 
-// helper: tusindtalsformat (dk)
-const formatDKK = (n) =>
-  typeof n === "number"
-    ? n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-    : String(n);
-
 export default function SwipeCVScreen() {
   const [cvs, setCvs] = useState([]);
+  const [visibleCvs, setVisibleCvs] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [criteria, setCriteria] = useState({
+    skills: "",
+    minAge: "",
+    maxAge: "",
+    city: "",
+    useMyLocation: false,
+    maxDistanceKm: "",
+  });
+  const [userLocation, setUserLocation] = useState(null);
+  const [geocodeCache, setGeocodeCache] = useState({});
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [filterTarget, setFilterTarget] = useState(null);
+
   const tabBarHeight = useBottomTabBarHeight();
   const { width, height } = useWindowDimensions();
   const navigation = useNavigation();
@@ -43,12 +60,12 @@ export default function SwipeCVScreen() {
         const data = snapshot.val();
         const me = auth.currentUser?.uid;
 
-        // lav array af andre end mig
         const others = Object.entries(data)
           .filter(([uid]) => uid !== me)
           .map(([uid, val]) => ({ uid, ...val }));
 
         setCvs(others);
+        setVisibleCvs(others);
       } catch (error) {
         console.error("Fejl:", error.message);
       }
@@ -56,6 +73,140 @@ export default function SwipeCVScreen() {
 
     loadCVs();
   }, []);
+
+  // helper: haversine distance (km)
+  const haversineKm = (lat1, lon1, lat2, lon2) => {
+    const toRad = (v) => (v * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const geocode = async (query) => {
+    if (!query) return null;
+    const key = query.toLowerCase();
+    if (geocodeCache[key]) return geocodeCache[key];
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        query,
+      )}&limit=1&countrycodes=dk`;
+      const res = await fetch(url, { headers: { "User-Agent": "Gk1App/1.0" } });
+      const arr = await res.json();
+      if (arr && arr.length > 0) {
+        const { lat, lon } = arr[0];
+        const coords = { latitude: Number(lat), longitude: Number(lon) };
+        setGeocodeCache((prev) => ({ ...prev, [key]: coords }));
+        return coords;
+      }
+    } catch (err) {
+      console.warn("Geocode fejl", err?.message || err);
+    }
+    return null;
+  };
+
+  const getUserLocation = async () => {
+    try {
+      let Location;
+      try {
+        Location = require("expo-location");
+      } catch (e) {
+        console.warn("expo-location ikke installeret; kan ikke hente enhedens position");
+        return null;
+      }
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return null;
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
+      const coords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+      setUserLocation(coords);
+      return coords;
+    } catch (err) {
+      console.warn("Location fejl", err?.message || err);
+      return null;
+    }
+  };
+
+  // apply filters when criteria change
+  useEffect(() => {
+    const apply = async () => {
+      if (!cvs) return setVisibleCvs([]);
+      setGeoLoading(true);
+
+      const skillList = (criteria.skills || "")
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+
+      const base = cvs.filter((it) => {
+        if (skillList.length) {
+          const itemSkills = Array.isArray(it.skills)
+            ? it.skills.map((s) => String(s).toLowerCase())
+            : it.skills
+            ? [String(it.skills).toLowerCase()]
+            : [];
+          const hasAll = skillList.every((s) => itemSkills.some((is) => is.includes(s)));
+          if (!hasAll) return false;
+        }
+        const age = it.age != null ? Number(it.age) : null;
+        if (criteria.minAge) {
+          const min = Number(criteria.minAge);
+          if (isFinite(min) && (age == null || age < min)) return false;
+        }
+        if (criteria.maxAge) {
+          const max = Number(criteria.maxAge);
+          if (isFinite(max) && (age == null || age > max)) return false;
+        }
+        if (criteria.city) {
+          const needle = criteria.city.toLowerCase();
+          const hay = (it.city || it.region || "").toLowerCase();
+          if (!hay.includes(needle)) return false;
+        }
+        return true;
+      });
+
+      const wantsDistance = criteria.maxDistanceKm && (criteria.useMyLocation || criteria.city);
+      if (!wantsDistance) {
+        setVisibleCvs(base);
+        setFilterTarget(null);
+        setGeoLoading(false);
+        return;
+      }
+
+      let target = null;
+      if (criteria.useMyLocation) {
+        target = userLocation || (await getUserLocation());
+      } else if (criteria.city) {
+        target = await geocode(criteria.city.trim());
+      }
+
+      if (!target) {
+        setVisibleCvs([]);
+        setFilterTarget(null);
+        setGeoLoading(false);
+        return;
+      }
+
+      const maxKm = Number(criteria.maxDistanceKm) || 0;
+      const filtered = base.filter((it) => {
+        const lat = Number(it.cityLat);
+        const lon = Number(it.cityLon);
+        if (!isFinite(lat) || !isFinite(lon)) return false;
+        const d = haversineKm(target.latitude, target.longitude, lat, lon);
+        return d <= maxKm;
+      });
+
+      setVisibleCvs(filtered);
+      setFilterTarget(target);
+      setGeoLoading(false);
+    };
+
+    apply();
+  }, [cvs, criteria, userLocation, geocodeCache]);
 
   // ingen data
   if (cvs.length === 0) {
@@ -89,7 +240,9 @@ export default function SwipeCVScreen() {
         {item.headline ? item.headline : "Andres CV"}
       </Text>
 
-      {item.region ? (
+      {item.city ? (
+        <Text style={{ fontSize: 16, color: "#fff" }}>📍 {item.city}</Text>
+      ) : item.region ? (
         <Text style={{ fontSize: 16, color: "#fff" }}>📍 {item.region}</Text>
       ) : null}
 
@@ -126,20 +279,59 @@ export default function SwipeCVScreen() {
           🌍 {toLabel(item.languages)}
         </Text>
       ) : null}
+
+      {filterTarget && item.cityLat && item.cityLon ? (
+        (() => {
+          const lat = Number(item.cityLat);
+          const lon = Number(item.cityLon);
+          if (isFinite(lat) && isFinite(lon)) {
+            const d = haversineKm(filterTarget.latitude, filterTarget.longitude, lat, lon);
+            return (
+              <Text style={{ fontSize: 14, color: "#fff", marginTop: 6 }}>
+                📏 ca. {Math.round(d)} km
+              </Text>
+            );
+          }
+          return null;
+        })()
+      ) : null}
     </View>
   );
 
   // render af cv-kort
   return (
     <View style={{ flex: 1, backgroundColor: "black" }}>
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setModalVisible(true)}
+        accessibilityLabel="Åbn søgekriterier"
+      >
+        <Ionicons name="add" size={22} color="#fff" />
+      </TouchableOpacity>
+
+      {geoLoading ? (
+        <View
+          style={{
+            position: "absolute",
+            top: 60,
+            right: 12,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            padding: 8,
+            borderRadius: 10,
+            zIndex: 5,
+          }}
+        >
+          <ActivityIndicator color="#fff" />
+        </View>
+      ) : null}
+
       <FlatList
-        data={cvs}
+        data={visibleCvs}
         keyExtractor={(item) => item.uid}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         renderItem={({ item }) => {
-          // sikre at photoUrl er en rigtig URL
           const hasValidPhoto =
             item.photoUrl &&
             typeof item.photoUrl === "string" &&
@@ -179,6 +371,134 @@ export default function SwipeCVScreen() {
           );
         }}
       />
+
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={{ fontWeight: "700", fontSize: 18, marginBottom: 8 }}>
+              Søg efter kriterier
+            </Text>
+
+            <TextInput
+              placeholder="Skills (komma-separeret)"
+              value={criteria.skills}
+              onChangeText={(t) => setCriteria((c) => ({ ...c, skills: t }))}
+              style={styles.input}
+              placeholderTextColor="#666"
+            />
+
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TextInput
+                placeholder="Min alder"
+                value={criteria.minAge}
+                onChangeText={(t) => setCriteria((c) => ({ ...c, minAge: t }))}
+                style={[styles.input, { flex: 1 }]}
+                keyboardType="number-pad"
+                placeholderTextColor="#666"
+              />
+              <TextInput
+                placeholder="Max alder"
+                value={criteria.maxAge}
+                onChangeText={(t) => setCriteria((c) => ({ ...c, maxAge: t }))}
+                style={[styles.input, { flex: 1 }]}
+                keyboardType="number-pad"
+                placeholderTextColor="#666"
+              />
+            </View>
+
+            <TextInput
+              placeholder="By (tekstmatch)"
+              value={criteria.city}
+              onChangeText={(t) => setCriteria((c) => ({ ...c, city: t }))}
+              style={styles.input}
+              placeholderTextColor="#666"
+            />
+
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+              <Text style={{ flex: 1 }}>Brug min position</Text>
+              <Switch
+                value={!!criteria.useMyLocation}
+                onValueChange={(v) => setCriteria((c) => ({ ...c, useMyLocation: v }))}
+              />
+            </View>
+
+            <TextInput
+              placeholder="Maks afstand (km)"
+              value={criteria.maxDistanceKm}
+              onChangeText={(t) => setCriteria((c) => ({ ...c, maxDistanceKm: t }))}
+              style={styles.input}
+              keyboardType="numeric"
+              placeholderTextColor="#666"
+            />
+
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12 }}>
+              <TouchableOpacity
+                onPress={() =>
+                  setCriteria({
+                    skills: "",
+                    minAge: "",
+                    maxAge: "",
+                    city: "",
+                    useMyLocation: false,
+                    maxDistanceKm: "",
+                  })
+                }
+                style={[styles.button, { backgroundColor: "#eee" }]}
+              >
+                <Text>Ryd</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={[styles.button, { backgroundColor: "#ccc" }]}
+              >
+                <Text>Annuller</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={[styles.button, { backgroundColor: "#111" }]}
+              >
+                <Text style={{ color: "#fff" }}>Anvend</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  fab: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 44 : 16,
+    right: 12,
+    zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    padding: 10,
+    borderRadius: 22,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+    color: "#000",
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+});

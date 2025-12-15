@@ -4,6 +4,7 @@ import {
   View, FlatList, TextInput, TouchableOpacity, Text,
   KeyboardAvoidingView, Platform
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ref, onChildAdded, push, set, get, update, serverTimestamp } from "firebase/database";
 import { rtdb, auth } from "../database/database";
@@ -20,6 +21,7 @@ const getUsername = async (uid) => {
 };
 
 export default function ChatScreen() {
+  const insets = useSafeAreaInsets();
   const { params } = useRoute();
   const navigation = useNavigation();
 
@@ -108,11 +110,22 @@ export default function ChatScreen() {
   }, [text, uid, otherUid, chatId, myName, otherName]);
 
   // ui
+  // Slightly tighter offset so the input sits just above the keyboard
+  const keyboardOffset = Platform.OS === "ios"
+    ? (insets.top || 0) + (insets.bottom || 0) + 40
+    : (insets.bottom || 0) + 40;
+
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={keyboardOffset}
+    >
       <FlatList
         ref={flatListRef}
         style={{ flex: 1, padding: 12 }}
+        contentContainerStyle={{ paddingBottom: 80 + (insets.bottom || 0) }}
+        keyboardShouldPersistTaps="handled"
         data={[...msgs].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))}
         keyExtractor={(m) => String(m.id)}
         renderItem={({ item }) => {
@@ -129,12 +142,12 @@ export default function ChatScreen() {
         }}
       />
 
-      <View style={{ flexDirection: "row", padding: 8, borderTopWidth: 1, borderColor: "#eee" }}>
+      <View style={{ flexDirection: "row", padding: 8, borderTopWidth: 1, borderColor: "#eee", backgroundColor: "#fff" }}>
         <TextInput
           value={text}
           onChangeText={setText}
           placeholder="Skriv en besked…"
-          style={{ flex: 1, padding: 12, borderWidth: 1, borderColor: "#ddd", borderRadius: 12, marginRight: 8 }}
+          style={{ flex: 1, padding: 12, borderWidth: 1, borderColor: "#ddd", borderRadius: 12, marginRight: 8, backgroundColor: "#fff" }}
           onSubmitEditing={send}
           returnKeyType="send"
         />
