@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Vi har brug for din position for at beregne afstand til andre brugere.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Vi har brug for din position for at beregne afstand til andre brugere."
+      }
     },
     "android": {
       "adaptiveIcon": {
