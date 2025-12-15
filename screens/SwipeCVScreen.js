@@ -505,23 +505,37 @@ export default function SwipeCVScreen() {
                   <View
                     style={{
                       flex: 0.66,
-                      backgroundColor: "#f0f2f5",
+                      backgroundColor: "#e8f0fe",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
                     <View
                       style={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: 40,
-                        backgroundColor: "#ddd",
+                        width: 120,
+                        height: 120,
+                        borderRadius: 60,
+                        backgroundColor: "#fff",
                         alignItems: "center",
                         justifyContent: "center",
+                        borderWidth: 3,
+                        borderColor: "#0066cc",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.1,
+                        shadowRadius: 8,
+                        elevation: 4,
                       }}
                     >
-                      <Ionicons name="person" size={40} color="#999" />
+                      <Ionicons name="person" size={60} color="#0066cc" />
                     </View>
+                    <Text style={{ 
+                      fontSize: 14, 
+                      color: "#0066cc", 
+                      marginTop: 16, 
+                      fontWeight: "600" 
+                    }}>
+                      Intet profilbillede
+                    </Text>
                   </View>
                   <View style={{ flex: 0.34, backgroundColor: "#f8f9fa" }}>
                     <InfoBlock item={item} />
