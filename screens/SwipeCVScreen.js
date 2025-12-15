@@ -323,7 +323,8 @@ export default function SwipeCVScreen() {
         left: 0,
         right: 0,
         bottom: tabBarHeight + 16,
-        padding: 20,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         backgroundColor: "#fff",
         marginHorizontal: 16,
         marginBottom: 16,
@@ -336,55 +337,56 @@ export default function SwipeCVScreen() {
     >
       <Text
         style={{
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: "700",
           color: "#1a1a1a",
-          marginBottom: 4,
+          marginBottom: 2,
         }}
+        numberOfLines={1}
       >
         {item.headline ? item.headline : "Andres CV"}
       </Text>
 
-      <Text style={{ fontSize: 14, color: "#666", marginBottom: 12 }}>
+      <Text style={{ fontSize: 12, color: "#666", marginBottom: 8 }} numberOfLines={1}>
         {item.jobTitle || "Professionel"}
       </Text>
 
-      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
-        📍 {item.city || item.region || "Lokation ikke angivet"}
-      </Text>
+      {/* To kolonner */}
+      <View style={{ flexDirection: "row", gap: 12 }}>
+        {/* Venstre kolonne */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+            📍 {item.city || item.region || "Ikke angivet"}
+          </Text>
+          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+            👤 {item.age ? `${item.age} år` : "Ikke angivet"}
+          </Text>
+          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+            💼 {item.yearsExp ? `${item.yearsExp} år` : "Ingen erfaring"}
+          </Text>
+          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+            🎓 {item.educationLevel || "Ikke angivet"}
+          </Text>
+        </View>
 
-      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
-        👤 {item.age ? `${item.age} år` : "Alder ikke angivet"}
-      </Text>
-
-      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
-        💼 {item.yearsExp ? `${item.yearsExp} års erfaring` : "Erfaring ikke angivet"}
-      </Text>
-
-      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
-        🎓 {item.educationLevel || "Uddannelse ikke angivet"}
-      </Text>
-
-      <Text style={{ fontSize: 14, color: "#666", marginBottom: 6 }}>
-        🕓 {item.availability || "Tilgængelighed ikke angivet"}
-      </Text>
-
-      <View style={{ marginBottom: 8 }}>
-        <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "600", marginBottom: 4 }}>
-          SKILLS
-        </Text>
-        <Text style={{ fontSize: 14, color: item.skills ? "#333" : "#999" }}>
-          {item.skills ? toLabel(item.skills) : "Ikke angivet"}
-        </Text>
-      </View>
-
-      <View style={{ marginBottom: 8 }}>
-        <Text style={{ fontSize: 12, color: "#0066cc", fontWeight: "600", marginBottom: 4 }}>
-          SPROG
-        </Text>
-        <Text style={{ fontSize: 14, color: item.languages ? "#333" : "#999" }}>
-          {item.languages ? toLabel(item.languages) : "Ikke angivet"}
-        </Text>
+        {/* Højre kolonne */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 11, color: "#666", marginBottom: 4 }} numberOfLines={1}>
+            🕓 {item.availability || "Ikke angivet"}
+          </Text>
+          <Text style={{ fontSize: 10, color: "#0066cc", fontWeight: "600", marginTop: 2 }}>
+            SKILLS
+          </Text>
+          <Text style={{ fontSize: 11, color: item.skills ? "#333" : "#999", marginBottom: 4 }} numberOfLines={1}>
+            {item.skills ? toLabel(item.skills) : "Ikke angivet"}
+          </Text>
+          <Text style={{ fontSize: 10, color: "#0066cc", fontWeight: "600", marginTop: 2 }}>
+            SPROG
+          </Text>
+          <Text style={{ fontSize: 11, color: item.languages ? "#333" : "#999" }} numberOfLines={1}>
+            {item.languages ? toLabel(item.languages) : "Ikke angivet"}
+          </Text>
+        </View>
       </View>
 
       {filterTarget && item.cityLat && item.cityLon ? (
@@ -394,7 +396,7 @@ export default function SwipeCVScreen() {
           if (isFinite(lat) && isFinite(lon)) {
             const d = haversineKm(filterTarget.latitude, filterTarget.longitude, lat, lon);
             return (
-              <Text style={{ fontSize: 12, color: "#999", marginTop: 6 }}>
+              <Text style={{ fontSize: 10, color: "#999", marginTop: 4 }}>
                 📏 ca. {Math.round(d)} km væk
               </Text>
             );
@@ -484,44 +486,46 @@ export default function SwipeCVScreen() {
               {...panResponder.panHandlers}
             >
               <Pressable
-                style={{ width, height }}
+                style={{ width, height, flexDirection: "column" }}
                 onPress={() => navigation.navigate("CVDetail", { cv: item })}
               >
                 {hasValidPhoto ? (
-                <ImageBackground
-                  source={{ uri: item.photoUrl }}
-                  style={{ width, height }}
-                  resizeMode="cover"
-                >
-                  <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)" }}>
+                <View style={{ flex: 1 }}>
+                  <ImageBackground
+                    source={{ uri: item.photoUrl }}
+                    style={{ flex: 0.66 }}
+                    resizeMode="cover"
+                  />
+                  <View style={{ flex: 0.34, backgroundColor: "#f8f9fa" }}>
                     <InfoBlock item={item} />
                   </View>
-                </ImageBackground>
+                </View>
               ) : (
-                <View
-                  style={{
-                    width,
-                    height,
-                    backgroundColor: "#f0f2f5",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 20,
-                  }}
-                >
+                <View style={{ flex: 1 }}>
                   <View
                     style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 40,
-                      backgroundColor: "#ddd",
+                      flex: 0.66,
+                      backgroundColor: "#f0f2f5",
                       alignItems: "center",
                       justifyContent: "center",
-                      marginBottom: 16,
                     }}
                   >
-                    <Ionicons name="person" size={40} color="#999" />
+                    <View
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 40,
+                        backgroundColor: "#ddd",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Ionicons name="person" size={40} color="#999" />
+                    </View>
                   </View>
-                  <InfoBlock item={item} />
+                  <View style={{ flex: 0.34, backgroundColor: "#f8f9fa" }}>
+                    <InfoBlock item={item} />
+                  </View>
                 </View>
               )}
               </Pressable>
