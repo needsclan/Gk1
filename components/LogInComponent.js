@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../database/database";
 import GlobalStyles from "../style/GlobalStyle";
 
@@ -47,6 +47,34 @@ export default function Login() {
     }
   };
 
+  // funktion til at sende password reset email
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert("Indtast email", "Skriv din email adresse i feltet ovenfor");
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      Alert.alert("Email sendt", "Tjek din indbakke for at nulstille dit kodeord");
+    } catch (error) {
+      let errorMessage = "";
+      
+      switch (error.code) {
+        case "auth/invalid-email":
+          errorMessage = "Ugyldig email adresse";
+          break;
+        case "auth/user-not-found":
+          errorMessage = "Ingen bruger fundet med denne email";
+          break;
+        default:
+          errorMessage = "Kunne ikke sende email. Prøv igen";
+      }
+      
+      Alert.alert("Fejl", errorMessage);
+    }
+  };
+
   return (
     <View>
       {/* overskrift */}
@@ -76,6 +104,11 @@ export default function Login() {
       {/* knap til login */}
       <TouchableOpacity style={GlobalStyles.button} onPress={handleLogin}>
         <Text style={GlobalStyles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+      {/* knap til glemt kodeord */}
+      <TouchableOpacity onPress={handleForgotPassword} style={{ marginTop: 10, alignItems: "center" }}>
+        <Text style={{ color: "#0066cc", fontSize: 14 }}>Glemt kodeord?</Text>
       </TouchableOpacity>
     </View>
   );
