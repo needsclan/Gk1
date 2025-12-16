@@ -120,7 +120,7 @@ export default function ChatScreen() {
       source={require('../assets/image.png')}
       style={{ flex: 1 }}
       resizeMode="center"
-      imageStyle={{ opacity: 0.08 }}
+      imageStyle={{ opacity: 0.15 }}
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}

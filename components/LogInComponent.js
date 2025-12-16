@@ -15,7 +15,35 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, email.trim(), password);
       Alert.alert("Logget ind!");
     } catch (error) {
-      Alert.alert("Fejl", error.message);
+      let errorMessage = "";
+      
+      switch (error.code) {
+        case "auth/invalid-email":
+          errorMessage = "Ugyldig email adresse";
+          break;
+        case "auth/user-not-found":
+          errorMessage = "Ingen bruger fundet med denne email";
+          break;
+        case "auth/wrong-password":
+          errorMessage = "Forkert kodeord";
+          break;
+        case "auth/invalid-credential":
+          errorMessage = "Forkert email eller kodeord";
+          break;
+        case "auth/too-many-requests":
+          errorMessage = "For mange forsøg. Prøv igen senere";
+          break;
+        case "auth/user-disabled":
+          errorMessage = "Denne bruger er deaktiveret";
+          break;
+        case "auth/network-request-failed":
+          errorMessage = "Netværksfejl. Tjek din internetforbindelse";
+          break;
+        default:
+          errorMessage = "Login fejlede. Prøv igen";
+      }
+      
+      Alert.alert("Login fejl", errorMessage);
     }
   };
 

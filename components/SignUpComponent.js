@@ -24,7 +24,29 @@ export default function Signup() {
 
       Alert.alert("Bruger oprettet!", `Velkommen, ${username}`);
     } catch (error) {
-      Alert.alert("Fejl", error.message);
+      let errorMessage = "";
+      
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage = "Denne email er allerede i brug";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Ugyldig email adresse";
+          break;
+        case "auth/weak-password":
+          errorMessage = "Kodeordet er for svagt. Brug mindst 6 tegn";
+          break;
+        case "auth/operation-not-allowed":
+          errorMessage = "Oprettelse af bruger er ikke tilladt";
+          break;
+        case "auth/network-request-failed":
+          errorMessage = "Netværksfejl. Tjek din internetforbindelse";
+          break;
+        default:
+          errorMessage = "Oprettelse fejlede. Prøv igen";
+      }
+      
+      Alert.alert("Oprettelse fejl", errorMessage);
     }
   };
 

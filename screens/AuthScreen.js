@@ -13,21 +13,23 @@ export default function AuthScreen() {
       source={require('../assets/image.png')}
       style={[GlobalStyles.container, { backgroundColor: "#f8f9fa" }]}
       resizeMode="center"
-      imageStyle={{ opacity: 0.05 }}
+      imageStyle={{ opacity: 0.15 }}
     >
-      {/* viser enten login eller signup afhængigt af state */}
-      {isLogin ? <Login /> : <Signup />}
-      
-      {/* knap til at skifte mellem login og signup */}
-      <View style={GlobalStyles.switchContainer}>
-        <Button
-          title={
-            isLogin
-              ? "Har du ikke en konto? Opret en"
-              : "Har du en konto? Log ind"
-          }
-          onPress={() => setIsLogin((prev) => !prev)}
-        />
+      <View style={{ flex: 1, justifyContent: "flex-start", paddingTop: 80 }}>
+        {/* viser enten login eller signup afhængigt af state */}
+        {isLogin ? <Login /> : <Signup />}
+        
+        {/* knap til at skifte mellem login og signup */}
+        <View style={GlobalStyles.switchContainer}>
+          <Button
+            title={
+              isLogin
+                ? "Har du ikke en konto? Opret en"
+                : "Har du en konto? Log ind"
+            }
+            onPress={() => setIsLogin((prev) => !prev)}
+          />
+        </View>
       </View>
     </ImageBackground>
   );
