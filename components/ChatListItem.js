@@ -2,7 +2,14 @@ import React, { memo } from "react";
 import { View, Text, TouchableOpacity, Alert, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+// Komponent der viser én chat i chat-listen
+// Props:
+// - item: chat objekt med otherUsername, otherUid, lastMessage, photoUrl
+// - onPress: funktion der kaldes når brugeren klikker på chatten
+// - onDelete: funktion der kaldes når brugeren sletter chatten
+// - onViewProfile: funktion der kaldes når brugeren klikker på profilbilledet
 function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
+  // viser bekræftelsesdialog før sletning af chat
   const confirmDelete = () => {
     Alert.alert(
       "Slet samtale",
@@ -16,6 +23,7 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
 
   return (
     <View style={{ paddingHorizontal: 12, paddingVertical: 10, backgroundColor: "#f8f9fa" }}>
+      {/* Hovedcontainer der kan trykkes på for at åbne chatten */}
       <TouchableOpacity
         onPress={() => onPress?.(item)}
         style={{
@@ -35,6 +43,7 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
           elevation: 2,
         }}
       >
+        {/* Profilbillede cirkel - kan trykkes på for at se profil */}
         <TouchableOpacity
           onPress={() => onViewProfile?.()}
           style={{
@@ -49,6 +58,7 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
             borderColor: "#0066cc",
           }}
         >
+          {/* Hvis bruger har uploadet profilbillede, vis det - ellers vis SkillBridge logo */}
           {item.photoUrl ? (
             <Image
               source={{ uri: item.photoUrl }}
@@ -63,15 +73,19 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
           )}
         </TouchableOpacity>
 
+        {/* Tekst område med navn og seneste besked */}
         <View style={{ flex: 1 }}>
+          {/* Brugerens visningsnavn */}
           <Text style={{ fontWeight: "700", fontSize: 15, color: "#1a1a1a", marginBottom: 4 }} numberOfLines={1}>
             {item.otherUsername || item.otherUid}
           </Text>
+          {/* Seneste besked eller placeholder tekst */}
           <Text style={{ color: "#0066cc", fontSize: 12, opacity: 0.85 }} numberOfLines={1}>
             {item.lastMessage || "Ingen samtale endnu"}
           </Text>
         </View>
 
+        {/* Menu knap (tre prikker) til at slette samtalen */}
         <TouchableOpacity
           onPress={confirmDelete}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -84,4 +98,5 @@ function ChatListItem({ item, onPress, onDelete, onViewProfile }) {
   );
 }
 
+// memo() optimering: kun re-render hvis props ændres
 export default memo(ChatListItem);

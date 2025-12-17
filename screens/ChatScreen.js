@@ -10,7 +10,8 @@ import { ref, onChildAdded, push, set, get, update, serverTimestamp } from "fire
 import { rtdb, auth } from "../database/database";
 import { useRoute, useNavigation } from "@react-navigation/native";
 
-// henter visningsnavn for en given bruger
+// henter visningsnavn for en given bruger fra Firebase
+// prøver først /users/{uid}/username, derefter /cvs/{uid}/headline
 const getUsername = async (uid) => {
   if (!uid) return null;
   const u = await get(ref(rtdb, `users/${uid}/username`));
@@ -25,17 +26,25 @@ export default function ChatScreen() {
   const { params } = useRoute();
   const navigation = useNavigation();
 
+  // chatId er sammensat af begge bruger-IDs sorteret
   const chatId = params?.chatId;
+  // den anden bruger vi chatter med
   const otherUid = params?.otherUid;
+  // nuværende bruger
   const uid = auth.currentUser?.uid;
 
+  // array af beskeder i denne chat
   const [msgs, setMsgs] = useState([]);
+  // tekst brugeren skriver i input-feltet
   const [text, setText] = useState("");
+  // mit visningsnavn
   const [myName, setMyName] = useState("");
+  // den andens visningsnavn
   const [otherName, setOtherName] = useState("");
+  // reference til FlatList for at kunne scrolle til bunden
   const flatListRef = useRef(null);
 
-  // henter navne
+  // henter visningsnavne for begge brugere når komponenten loader
   useEffect(() => {
     (async () => {
       if (!uid || !otherUid) return;
@@ -45,7 +54,8 @@ export default function ChatScreen() {
     })();
   }, [uid, otherUid]);
 
-  // header med fast knap til ChatList
+  // sætter header titel til den andens navn og tilføjer tilbage-knap
+  // tilbage-knappen navigerer altid til ChatList (ikke bare tilbage)
   useLayoutEffect(() => {
     navigation.setOptions({
       title: otherName || "",
@@ -60,26 +70,31 @@ export default function ChatScreen() {
     });
   }, [navigation, otherName]);
 
-  // realtime stream af beskeder
+  // sætter realtime listener op til at lytte efter nye beskeder i denne chat
+  // onChildAdded køres for alle eksisterende beskeder + hver ny besked der tilføjes
   useEffect(() => {
     if (!chatId) return;
     setMsgs([]);
     const msgsRef = ref(rtdb, `messages/${chatId}`);
     const unsub = onChildAdded(msgsRef, (snap) => {
       const m = snap.val();
+      // undgå duplikater hvis beskeden allerede er i listen
       setMsgs((prev) => (prev.some(x => x.id === snap.key) ? prev : [...prev, { id: snap.key, ...m }]));
     });
+    // cleanup: fjern listener når komponenten unmounter
     return () => unsub();
   }, [chatId]);
 
-  // autoscroll
+  // auto-scroll til bunden når nye beskeder kommer ind
+  // lille delay (50ms) for at sikre rendering er færdig
   useEffect(() => {
     if (!flatListRef.current || msgs.length === 0) return;
     const t = setTimeout(() => flatListRef.current?.scrollToEnd?.({ animated: true }), 50);
     return () => clearTimeout(t);
   }, [msgs.length]);
 
-  // sørger for userChats findes for begge parter
+  // sikrer at userChats metadata findes for begge brugere
+  // hvis ikke, oprettes de så chatten vises i begge brugeres chat-lister
   useEffect(() => {
     const init = async () => {
       if (!uid || !otherUid || !chatId) return;
@@ -96,21 +111,24 @@ export default function ChatScreen() {
     init();
   }, [uid, otherUid, chatId, myName, otherName]);
 
-  // sender besked
+  // sender en ny besked til Firebase
+  // opdaterer både /messages/{chatId} og userChats metadata for begge brugere
   const send = useCallback(async () => {
     const t = text.trim();
     if (!t || !uid || !chatId) return;
     setText("");
+    // opret ny besked i /messages/{chatId}
     const msgRef = push(ref(rtdb, `messages/${chatId}`));
     await set(msgRef, { text: t, senderId: uid, createdAt: serverTimestamp() });
+    // opdater metadata i begge brugeres chat-lister med seneste besked
     const metaMe = { otherUid, otherUsername: otherName || otherUid, lastMessage: t, updatedAt: serverTimestamp() };
     const metaOther = { otherUid: uid, otherUsername: myName || uid, lastMessage: t, updatedAt: serverTimestamp() };
     await update(ref(rtdb, `userChats/${uid}/${chatId}`), metaMe);
     await update(ref(rtdb, `userChats/${otherUid}/${chatId}`), metaOther);
   }, [text, uid, otherUid, chatId, myName, otherName]);
 
-  // ui
-  // Slightly tighter offset so the input sits just above the keyboard
+  // UI rendering: SkillBridge logo baggrund, beskeder i FlatList, input felt nederst
+  // KeyboardAvoidingView sørger for at tastaturet skubber indholdet op
   const keyboardOffset = Platform.OS === "ios"
     ? (insets.top || 0) + (insets.bottom || 0) + 40
     : (insets.bottom || 0) + 40;

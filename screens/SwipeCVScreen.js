@@ -24,7 +24,7 @@ import { rtdb, auth } from "../database/database";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 
-// helper: lav værdi om til label
+// helper: konverterer forskellige datatyper til læsbar tekst
 const toLabel = (v) => {
   if (v == null) return "";
   if (Array.isArray(v)) return v.join(", ");
@@ -33,9 +33,13 @@ const toLabel = (v) => {
 };
 
 export default function SwipeCVScreen() {
+  // state til alle CV'er hentet fra Firebase
   const [cvs, setCvs] = useState([]);
+  // state til filtrerede CV'er baseret på søgekriterier
   const [visibleCvs, setVisibleCvs] = useState([]);
+  // styrer om filter-modal er åben
   const [modalVisible, setModalVisible] = useState(false);
+  // søgekriterier som brugeren indtaster
   const [criteria, setCriteria] = useState({
     skills: "",
     languages: "",
@@ -45,34 +49,49 @@ export default function SwipeCVScreen() {
     useMyLocation: false,
     maxDistanceKm: "",
   });
+  // brugerens GPS koordinater hvis aktiveret
   const [userLocation, setUserLocation] = useState(null);
+  // cache til at gemme by-koordinater for at undgå gentagne API-kald
   const [geocodeCache, setGeocodeCache] = useState({});
+  // viser loading spinner mens geodata hentes
   const [geoLoading, setGeoLoading] = useState(false);
+  // den målposition (bruger eller by) vi filtrerer afstand fra
   const [filterTarget, setFilterTarget] = useState(null);
+  // det CV som lige nu vises på skærmen
   const [currentCv, setCurrentCv] = useState(null);
+  // viser "tilføjet til kontakter" besked i 2 sekunder
   const [contactSaved, setContactSaved] = useState(false);
+  // reference til det nuværende synlige CV (bruges til swipe-down)
   const currentItemRef = useRef(null);
+  // animated værdi til swipe-ned gestus
   const translateY = useRef(new Animated.Value(0)).current;
+  // reference til FlatList for at kunne scrolle programmatisk
   const flatListRef = useRef(null);
 
+  // højde på bottom tab bar (bruges til at positionere infoboks)
   const tabBarHeight = useBottomTabBarHeight();
+  // skærmens bredde og højde
   const { width, height } = useWindowDimensions();
+  // navigation hook til at skifte mellem skærme
   const navigation = useNavigation();
 
-  // hent cvs
+  // henter alle CV'er fra Firebase når komponenten loader
   useEffect(() => {
     const loadCVs = async () => {
       try {
+        // hent /cvs node fra Firebase Realtime Database
         const snapshot = await get(child(ref(rtdb), "cvs"));
         if (!snapshot.exists()) return setCvs([]);
 
         const data = snapshot.val();
         const me = auth.currentUser?.uid;
 
+        // filtrer eget CV ud, så man ikke ser sig selv
         const others = Object.entries(data)
           .filter(([uid]) => uid !== me)
           .map(([uid, val]) => ({ uid, ...val }));
 
+        // sæt både alle CVer og synlige CVer til at starte
         setCvs(others);
         setVisibleCvs(others);
       } catch (error) {
@@ -83,10 +102,11 @@ export default function SwipeCVScreen() {
     loadCVs();
   }, []);
 
-  // helper: haversine distance (km)
+  // beregner afstand i km mellem to GPS-koordinater ved hjælp af Haversine-formlen
+  // denne formel tager højde for jordens krumning
   const haversineKm = (lat1, lon1, lat2, lon2) => {
     const toRad = (v) => (v * Math.PI) / 180;
-    const R = 6371;
+    const R = 6371; // jordens radius i km
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
     const a =
@@ -97,9 +117,12 @@ export default function SwipeCVScreen() {
     return R * c;
   };
 
+  // konverterer bynavn til GPS-koordinater via OpenStreetMap Nominatim API
+  // kun danske byer (countrycodes=dk)
   const geocode = async (query) => {
     if (!query) return null;
     const key = query.toLowerCase();
+    // tjek cache først for at undgå unødvendige API-kald
     if (geocodeCache[key]) return geocodeCache[key];
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
@@ -110,6 +133,7 @@ export default function SwipeCVScreen() {
       if (arr && arr.length > 0) {
         const { lat, lon } = arr[0];
         const coords = { latitude: Number(lat), longitude: Number(lon) };
+        // gem i cache til næste gang
         setGeocodeCache((prev) => ({ ...prev, [key]: coords }));
         return coords;
       }
@@ -119,17 +143,21 @@ export default function SwipeCVScreen() {
     return null;
   };
 
+  // henter brugerens nuværende GPS-position via expo-location
   const getUserLocation = async () => {
     try {
       let Location;
       try {
+        // dynamisk require fordi expo-location måske ikke er installeret
         Location = require("expo-location");
       } catch (e) {
         console.warn("expo-location ikke installeret; kan ikke hente enhedens position");
         return null;
       }
+      // bed om tilladelse til at bruge location
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") return null;
+      // hent højeste præcision position
       const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
       const coords = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
       setUserLocation(coords);
@@ -140,7 +168,8 @@ export default function SwipeCVScreen() {
     }
   };
 
-  // apply filters when criteria change
+  // anvender alle filtre når søgekriterier ændres
+  // kører igen hver gang cvs, criteria, userLocation eller geocodeCache ændres
   useEffect(() => {
     const apply = async () => {
       if (!cvs) return setVisibleCvs([]);
@@ -231,7 +260,8 @@ export default function SwipeCVScreen() {
     apply();
   }, [cvs, criteria, userLocation, geocodeCache]);
 
-  // gem kontakt (opretter chat meta uden besked)
+  // gemmer kontakt til Firebase når bruger swiper ned
+  // opretter chat metadata for begge brugere uden at sende en besked
   const saveContact = useCallback(
     async (cv) => {
       const me = auth.currentUser?.uid;
@@ -239,14 +269,17 @@ export default function SwipeCVScreen() {
       const otherUid = cv.uid || cv.ownerUid;
       if (!otherUid || otherUid === me) return;
 
+      // chat ID er begge bruger-IDs sorteret og sammensat med underscore
       const chatId = [me, otherUid].sort().join("_");
       const username = cv.headline || cv.username || otherUid;
+      // metadata for min chat-liste
       const metaMe = {
         otherUid,
         otherUsername: username,
         lastMessage: "",
         updatedAt: Date.now(),
       };
+      // metadata for den andens chat-liste
       const metaOther = {
         otherUid: me,
         otherUsername: auth.currentUser?.email || me,
@@ -255,10 +288,12 @@ export default function SwipeCVScreen() {
       };
 
       try {
+        // gem begge metadata samtidigt
         await Promise.all([
           set(ref(rtdb, `userChats/${me}/${chatId}`), metaMe),
           set(ref(rtdb, `userChats/${otherUid}/${chatId}`), metaOther),
         ]);
+        // vis bekræftelse i 2 sekunder
         setContactSaved(true);
         setTimeout(() => setContactSaved(false), 2000);
       } catch (err) {
@@ -268,7 +303,8 @@ export default function SwipeCVScreen() {
     []
   );
 
-  // track hvilket cv der vises for at kunne gemme
+  // holder styr på hvilket CV der er synligt på skærmen
+  // bruges når bruger swiper ned for at vide hvilket CV der skal gemmes
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 70 }).current;
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
     if (viewableItems?.length) {
@@ -278,25 +314,30 @@ export default function SwipeCVScreen() {
     }
   }).current;
 
-  // pan responder til swipe ned
+  // håndterer swipe-ned gestus for at gemme kontakt
+  // aktiveres kun ved vertikal swipe (ikke horisontal)
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
+      // kun fang gestus hvis det er primært vertikal bevægelse
       onMoveShouldSetPanResponder: (_, g) => {
         const vy = Math.abs(g.dy);
         const vx = Math.abs(g.dx);
         return vy > 15 && vy > vx * 1.5;
       },
+      // følg fingerens bevægelse nedad
       onPanResponderMove: (_, g) => {
         if (g.dy > 0) {
           translateY.setValue(g.dy);
         }
       },
       onPanResponderTerminationRequest: () => true,
+      // når finger slippes: gem kontakt hvis swipe > 60px, ellers spring tilbage
       onPanResponderRelease: (_, g) => {
         if (g.dy > 60) {
           saveContact(currentItemRef.current);
         }
+        // animér tilbage til start position
         Animated.spring(translateY, {
           toValue: 0,
           useNativeDriver: true,
@@ -316,7 +357,8 @@ export default function SwipeCVScreen() {
     );
   }
 
-  // infoblok
+  // hvid informationsboks der vises nederst på hvert CV-kort
+  // viser headline, by, alder, erfaring, uddannelse, tilgængelighed, skills og sprog
   const InfoBlock = ({ item }) => (
     <View
       style={{
@@ -408,7 +450,8 @@ export default function SwipeCVScreen() {
     </View>
   );
 
-  // render af cv-kort
+  // hovedvisning: horisontal FlatList med fullscreen CV-kort
+  // floating action button (tragt-ikon) til at åbne filter-modal
   return (
     <View style={{ flex: 1, backgroundColor: "#f8f9fa" }}>
       <TouchableOpacity
